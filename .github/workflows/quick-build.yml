@@ -70,7 +70,7 @@ jobs:
         fi
     
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: chat-monitor-${{ runner.os }}
         path: chat_monitor_${{ runner.os }}.* 

@@ -49,7 +49,7 @@ jobs:
         powershell Compress-Archive -Path dist\windows\* -DestinationPath chat_monitor_windows_${{ matrix.python-version }}.zip
     
     - name: Upload Windows artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-build-${{ matrix.python-version }}
         path: chat_monitor_windows_${{ matrix.python-version }}.zip
@@ -102,7 +102,7 @@ jobs:
         tar -czf chat_monitor_linux_${{ matrix.python-version }}.tar.gz -C dist/linux .
     
     - name: Upload Linux artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-build-${{ matrix.python-version }}
         path: chat_monitor_linux_${{ matrix.python-version }}.tar.gz
@@ -150,7 +150,7 @@ jobs:
         tar -czf chat_monitor_macos_${{ matrix.python-version }}.tar.gz -C dist/macos .
     
     - name: Upload macOS artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: macos-build-${{ matrix.python-version }}
         path: chat_monitor_macos_${{ matrix.python-version }}.tar.gz
@@ -162,7 +162,7 @@ jobs:
     
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
     
     - name: Create release package
       run: |
