@@ -1,0 +1,76 @@
+name: Quick Build
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: [3.10]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_clean.txt
+        pip install pyinstaller
+    
+    - name: Build executable
+      run: |
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          pyinstaller --onefile --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --name network_monitor network_monitor.py
+        else
+          pyinstaller --onefile --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --name network_monitor network_monitor.py
+        fi
+    
+    - name: Create package
+      run: |
+        mkdir -p dist/package
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          copy dist\chat_monitor.exe dist\package\
+          copy dist\network_monitor.exe dist\package\
+          copy config_with_yolo.yaml dist\package\
+          copy start_monitor.bat dist\package\
+          copy -r sounds dist\package\
+          copy -r test_img dist\package\
+          copy README.md dist\package\
+          powershell Compress-Archive -Path dist\package\* -DestinationPath chat_monitor_${{ runner.os }}.zip
+        else
+          cp dist/chat_monitor dist/package/
+          cp dist/network_monitor dist/package/
+          cp config_with_yolo.yaml dist/package/
+          cp start_monitor.sh dist/package/
+          chmod +x dist/package/start_monitor.sh
+          chmod +x dist/package/chat_monitor
+          chmod +x dist/package/network_monitor
+          cp -r sounds dist/package/
+          cp -r test_img dist/package/
+          cp README.md dist/package/
+          tar -czf chat_monitor_${{ runner.os }}.tar.gz -C dist/package .
+        fi
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: chat-monitor-${{ runner.os }}
+        path: chat_monitor_${{ runner.os }}.* 

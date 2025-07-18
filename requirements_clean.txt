@@ -1,0 +1,25 @@
+# 动态监控主程序依赖（精简版）
+# 核心依赖
+opencv-python>=4.8.0
+numpy>=1.24.0
+psutil>=5.9.0
+pyautogui>=0.9.54
+requests>=2.31.0
+PyYAML>=6.0
+Pillow>=10.0.0
+
+# OCR相关
+pytesseract>=0.3.10
+
+# 音频播放支持
+playsound>=1.2.2
+
+# 可选：YOLO模型支持（如果用户需要）
+# ultralytics>=8.0.0
+
+# 可选：语义分析支持（如果用户需要）
+# torch>=2.7.1
+# transformers>=4.53.1
+
+# 开发工具（可选）
+watchdog>=3.0.0  # 配置文件监控

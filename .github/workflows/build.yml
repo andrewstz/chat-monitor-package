@@ -1,0 +1,185 @@
+name: Build and Package Chat Monitor
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_clean.txt
+        pip install pyinstaller
+    
+    - name: Build Windows executable
+      run: |
+        pyinstaller --onefile --windowed --name chat_monitor_windows main_monitor_dynamic.py
+        pyinstaller --onefile --name network_monitor_windows network_monitor.py
+    
+    - name: Create Windows package
+      run: |
+        mkdir -p dist/windows
+        copy dist\chat_monitor_windows.exe dist\windows\
+        copy dist\network_monitor_windows.exe dist\windows\
+        copy config_with_yolo.yaml dist\windows\
+        copy start_monitor.bat dist\windows\
+        copy -r sounds dist\windows\
+        copy -r test_img dist\windows\
+        copy README.md dist\windows\
+        
+        # Create zip package
+        powershell Compress-Archive -Path dist\windows\* -DestinationPath chat_monitor_windows_${{ matrix.python-version }}.zip
+    
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-build-${{ matrix.python-version }}
+        path: chat_monitor_windows_${{ matrix.python-version }}.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_clean.txt
+        pip install pyinstaller
+    
+    - name: Build Linux executable
+      run: |
+        pyinstaller --onefile --name chat_monitor_linux main_monitor_dynamic.py
+        pyinstaller --onefile --name network_monitor_linux network_monitor.py
+    
+    - name: Create Linux package
+      run: |
+        mkdir -p dist/linux
+        cp dist/chat_monitor_linux dist/linux/
+        cp dist/network_monitor_linux dist/linux/
+        cp config_with_yolo.yaml dist/linux/
+        cp start_monitor.sh dist/linux/
+        chmod +x dist/linux/start_monitor.sh
+        chmod +x dist/linux/chat_monitor_linux
+        chmod +x dist/linux/network_monitor_linux
+        cp -r sounds dist/linux/
+        cp -r test_img dist/linux/
+        cp README.md dist/linux/
+        
+        # Create tar.gz package
+        tar -czf chat_monitor_linux_${{ matrix.python-version }}.tar.gz -C dist/linux .
+    
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-build-${{ matrix.python-version }}
+        path: chat_monitor_linux_${{ matrix.python-version }}.tar.gz
+
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_clean.txt
+        pip install pyinstaller
+    
+    - name: Build macOS executable
+      run: |
+        pyinstaller --onefile --name chat_monitor_macos main_monitor_dynamic.py
+        pyinstaller --onefile --name network_monitor_macos network_monitor.py
+    
+    - name: Create macOS package
+      run: |
+        mkdir -p dist/macos
+        cp dist/chat_monitor_macos dist/macos/
+        cp dist/network_monitor_macos dist/macos/
+        cp config_with_yolo.yaml dist/macos/
+        cp start_monitor.sh dist/macos/
+        chmod +x dist/macos/start_monitor.sh
+        chmod +x dist/macos/chat_monitor_macos
+        chmod +x dist/macos/network_monitor_macos
+        cp -r sounds dist/macos/
+        cp -r test_img dist/macos/
+        cp README.md dist/macos/
+        
+        # Create tar.gz package
+        tar -czf chat_monitor_macos_${{ matrix.python-version }}.tar.gz -C dist/macos .
+    
+    - name: Upload macOS artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-build-${{ matrix.python-version }}
+        path: chat_monitor_macos_${{ matrix.python-version }}.tar.gz
+
+  create-release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create release package
+      run: |
+        mkdir -p release_package
+        cp -r windows-build-* release_package/
+        cp -r linux-build-* release_package/
+        cp -r macos-build-* release_package/
+        
+        # Create combined release zip
+        zip -r chat_monitor_release_${{ github.event.release.tag_name }}.zip release_package/
+    
+    - name: Upload to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./chat_monitor_release_${{ github.event.release.tag_name }}.zip
+        asset_name: chat_monitor_release_${{ github.event.release.tag_name }}.zip
+        asset_content_type: application/zip 
