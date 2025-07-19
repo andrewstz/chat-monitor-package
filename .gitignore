@@ -1,0 +1,243 @@
+# GitHub 忽略文件列表 - Chat Monitor 项目
+
+# ===== 构建产物和中间文件 =====
+
+# PyInstaller 构建目录
+build/
+dist/
+*.spec
+
+# 自定义构建目录
+build_macos_app_simple/
+build_windows_app/
+build_linux_app/
+
+# 发布目录
+release/
+packages/
+output/
+
+# 可执行文件
+*.exe
+*.app/
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# ===== Python 相关 =====
+
+# Python 字节码
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Python 包
+*.egg
+*.egg-info/
+.installed.cfg
+*.egg-info/
+
+# pip 缓存
+.pip/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 开发工具
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# ===== IDE 和编辑器 =====
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===== 操作系统文件 =====
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===== 日志文件 =====
+
+# 应用日志
+*.log
+logs/
+log/
+
+# 系统日志
+*.syslog
+*.out
+
+# ===== 临时文件 =====
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+
+# 临时目录
+temp/
+tmp/
+.tmp/
+
+# ===== 配置文件 =====
+
+# 本地配置文件
+config_local.yaml
+config_local.yml
+.env.local
+.env.production
+.env.development
+
+# 敏感信息
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+secrets.yaml
+secrets.yml
+
+# ===== 模型文件 =====
+
+# YOLO 模型文件（通常很大）
+*.pt
+*.pth
+*.weights
+*.onnx
+*.engine
+models/
+weights/
+
+# ===== 测试文件 =====
+
+# 测试图片和视频
+test_output/
+test_results/
+screenshots/
+recordings/
+
+# ===== 文档生成 =====
+
+# 自动生成的文档
+docs/_build/
+docs/build/
+site/
+
+# ===== 其他 =====
+
+# 压缩文件
+*.7z
+*.rar
+*.tar
+*.gz
+*.bz2
+*.xz
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 缓存文件
+.cache/
+cache/
+
+# 备份文件
+backup/
+*.backup
+
+# 特定于项目的忽略
+# 如果有特定的文件需要忽略，可以在这里添加 
