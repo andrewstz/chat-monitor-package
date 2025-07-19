@@ -75,7 +75,7 @@ network_monitor:
   check_interval: 60          # 检测间隔（秒）
   timeout: 10                 # 超时时间（秒）
   consecutive_failures: 3     # 连续失败次数阈值
-  tolerance_minutes: 15       # 容错时间（分钟）
+  tolerance_minutes: 5       # 容错时间（分钟）
   test_targets:               # 检测目标
     - name: "谷歌"
       url: "https://www.google.com"

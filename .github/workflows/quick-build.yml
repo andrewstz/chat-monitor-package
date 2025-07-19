@@ -36,11 +36,11 @@ jobs:
     - name: Build executable
       run: |
         if [ "$RUNNER_OS" = "Windows" ]; then
-          pyinstaller --onefile --name chat_monitor main_monitor_dynamic.py
-          pyinstaller --onefile --name network_monitor network_monitor.py
+          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor network_monitor.py
         else
-          pyinstaller --onefile --name chat_monitor main_monitor_dynamic.py
-          pyinstaller --onefile --name network_monitor network_monitor.py
+          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor network_monitor.py
         fi
     
     - name: Create package
