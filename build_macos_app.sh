@@ -135,6 +135,10 @@ if [ -f "dist/ChatMonitor" ]; then
         echo "  ✅ 复制 test_img/"
     fi
     
+    # 复制配置文件到外部可访问位置
+    cp config_with_yolo.yaml "$RESOURCES_DIR/"
+    echo "  ✅ 复制 config_with_yolo.yaml"
+    
     # 创建Info.plist
     cat > "$CONTENTS_DIR/Info.plist" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -196,6 +200,10 @@ EOF
     
     # 复制应用程序到发布目录
     cp -r "$APP_DIR" "$RELEASE_DIR/"
+    
+    # 移除隔离属性
+    echo "🔓 移除应用隔离属性..."
+    xattr -rd com.apple.quarantine "$RELEASE_DIR/$APP_NAME" 2>/dev/null || true
     
     # 创建DMG安装包
     echo "📦 创建DMG安装包..."

@@ -26,8 +26,42 @@ except ImportError:
     YOLO_AVAILABLE = False
     print("⚠️  ultralytics未安装，无法使用YOLO模型")
 
+def get_config_path():
+    """获取配置文件路径，支持 .app 包和开发环境"""
+    import os
+    import sys
+    
+    # 可能的配置文件路径
+    possible_paths = [
+        "config_with_yolo.yaml",  # 当前目录
+        os.path.join(os.path.dirname(__file__), "config_with_yolo.yaml"),  # 脚本目录
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config_with_yolo.yaml"),  # 绝对路径
+    ]
+    
+    # 如果是 .app 包，尝试从 Resources 目录加载
+    if getattr(sys, 'frozen', False):
+        # 打包后的应用
+        app_dir = os.path.dirname(sys.executable)
+        resources_dir = os.path.join(app_dir, "..", "Resources")
+        possible_paths.insert(0, os.path.join(resources_dir, "config_with_yolo.yaml"))
+        # 也尝试从用户目录加载
+        user_config = os.path.expanduser("~/ChatMonitor/config_with_yolo.yaml")
+        possible_paths.insert(0, user_config)
+    
+    # 查找存在的配置文件
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"✅ 找到配置文件: {path}")
+            return path
+    
+    # 如果都找不到，返回默认路径
+    default_path = "config_with_yolo.yaml"
+    print(f"⚠️  未找到配置文件，使用默认路径: {default_path}")
+    return default_path
+
 # 初始化配置管理器
-config_manager = init_config_manager("config_with_yolo.yaml")
+config_path = get_config_path()
+config_manager = init_config_manager(config_path)
 
 # 全局变量
 TARGET_CONTACTS = []
