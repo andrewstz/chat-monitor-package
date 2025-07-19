@@ -15,6 +15,7 @@ import numpy as np
 import pytesseract
 import requests  # 添加requests导入
 from typing import List, Dict
+from datetime import datetime
 from fuzzy_matcher import FuzzyMatcher
 from config_manager import init_config_manager
 from network_monitor import NetworkMonitor
@@ -291,6 +292,8 @@ class YOLOModelManager:
 
 def main():
     print("✅ 动态配置监控已启动，修改 config_with_yolo.yaml 可实时生效")
+    print(f"🕐 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
     conf = get_config()
     app_name = conf.get("chat_app", {}).get("name", "WeChat")
     yolo_conf = conf.get("yolo", {})
@@ -305,6 +308,18 @@ def main():
     yolo_manager = YOLOModelManager(yolo_model_path, yolo_confidence) if yolo_enabled else None
     last_reply_time = 0
     debug_verbose = conf.get("debug", {}).get("verbose", False)
+    
+    # 打印初始配置
+    print(f"🎯 目标应用: {app_name}")
+    print(f"🤖 YOLO检测: {'启用' if yolo_enabled else '禁用'}")
+    if yolo_enabled:
+        print(f"📁 YOLO模型: {yolo_model_path}")
+        print(f"🎯 置信度阈值: {yolo_confidence}")
+    print(f"📝 OCR语言: {ocr_lang}")
+    print(f"⏱️  检测间隔: {check_interval} 秒")
+    print(f"🎯 目标联系人: {TARGET_CONTACTS}")
+    print(f"🔍 调试模式: {'开启' if debug_verbose else '关闭'}")
+    print("-" * 50)
 
     # 初始化网络监控器
     network_conf = conf.get("network_monitor", {})
@@ -319,8 +334,12 @@ def main():
         net_monitor.start_monitoring()
         print(f"🌐 网络监控已启动 - 连续失败阈值: {net_monitor.consecutive_failures}, 容错时间: {net_monitor.tolerance_minutes}分钟")
 
+    detection_count = 0
+    last_status_time = time.time()
+    
     while True:
         try:
+            current_time = time.time()
             conf = get_config()
             app_name = conf.get("chat_app", {}).get("name", "WeChat")
             check_interval = conf.get("monitor", {}).get("check_interval", 30)
@@ -328,7 +347,7 @@ def main():
 
             # 检查进程
             if not check_process(app_name):
-                print(f"未找到 {app_name} 进程")
+                print(f"❌ 未找到 {app_name} 进程 - {datetime.now().strftime('%H:%M:%S')}")
                 play_sound("error")
                 time.sleep(check_interval)
                 continue
@@ -345,13 +364,26 @@ def main():
                     elif alert['type'] == 'network_restored':
                         print("网络恢复正常")
                         
+            # 定期输出状态信息
+            if current_time - last_status_time > 60:  # 每分钟输出一次状态
+                print(f"📊 状态更新 - {datetime.now().strftime('%H:%M:%S')} - 检测次数: {detection_count}")
+                last_status_time = current_time
+            
             img = screenshot()
             if img is None:
+                print(f"❌ 截图失败 - {datetime.now().strftime('%H:%M:%S')}")
                 time.sleep(check_interval)
                 continue
+            
+            detection_count += 1
             results = []
             if yolo_manager and yolo_manager.initialized:
                 results = detect_and_ocr_with_yolo(img, yolo_manager, ocr_lang, ocr_psm)
+                if debug_verbose and results:
+                    print(f"🔍 检测到 {len(results)} 个弹窗 - {datetime.now().strftime('%H:%M:%S')}")
+            else:
+                if debug_verbose:
+                    print(f"⚠️  YOLO检测未启用或初始化失败 - {datetime.now().strftime('%H:%M:%S')}")
             for result in results:
                 text = result['text']
                 if debug_verbose:

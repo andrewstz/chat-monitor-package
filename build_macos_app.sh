@@ -152,7 +152,7 @@ if [ -f "dist/ChatMonitor" ]; then
     <key>CFBundleName</key>
     <string>ChatMonitor</string>
     <key>CFBundleDisplayName</key>
-    <string>Chat Monitor</string>
+    <string>ChatMonitor</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -185,6 +185,8 @@ if [ -f "dist/ChatMonitor" ]; then
     <false/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>LSMultipleInstancesProhibited</key>
+    <true/>
 </dict>
 </plist>
 EOF
