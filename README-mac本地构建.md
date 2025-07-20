@@ -1,3 +1,5 @@
+conda activate paddle
+
 # mac本地构建脚本去掉拷贝文件步骤，直接在当前项目中（已经是精简版）打包
 build_macos_app.sh （基于~/study/promgramLang/python/work/chat_monitor_ai/yolov5-popup-detector/build_macos_app_simple.sh修改的）
 �� 主要修改：
@@ -570,3 +572,6 @@ PyInstaller排除了matplotlib、pandas、scipy等模块：这些模块虽然项
 将ChatMonitor.app拖拽到应用程序文件夹
 从启动台或应用程序文件夹启动
 观察应用程序是否能正常检测聊天弹窗
+
+
+

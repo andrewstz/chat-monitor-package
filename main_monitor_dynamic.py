@@ -290,6 +290,23 @@ class YOLOModelManager:
             print(f"🔍 sys.executable: {sys.executable}")
             print(f"🔍 可执行文件目录: {os.path.dirname(sys.executable)}")
         
+        # 调试断点 - 可以通过环境变量启用
+        if os.environ.get('CHATMONITOR_DEBUG') == '1':
+            import pdb; pdb.set_trace()
+        
+        # 远程调试支持
+        if os.environ.get('CHATMONITOR_REMOTE_DEBUG') == '1':
+            try:
+                import debugpy
+                debugpy.listen(("0.0.0.0", 5678))
+                print("🔗 远程调试器已启动，等待连接...")
+                debugpy.wait_for_client()
+                print("🔗 远程调试器已连接")
+            except ImportError:
+                print("⚠️  debugpy未安装，跳过远程调试")
+            except Exception as e:
+                print(f"⚠️  远程调试启动失败: {e}")
+        
         # 如果路径已经是绝对路径且存在，直接返回
         if os.path.isabs(model_path) and os.path.exists(model_path):
             print(f"✅ 绝对路径存在: {model_path}")
@@ -310,6 +327,12 @@ class YOLOModelManager:
             resources_path = os.path.join(resources_dir, model_path)
             possible_paths.insert(0, resources_path)
             print(f"🔍 添加Resources路径: {resources_path}")
+            
+            # 也尝试从用户目录加载
+            user_home = os.path.expanduser("~")
+            user_models_path = os.path.join(user_home, "ChatMonitor", "models", "best.pt")
+            possible_paths.insert(0, user_models_path)
+            print(f"🔍 添加用户目录路径: {user_models_path}")
         
         print(f"🔍 尝试的路径列表:")
         for i, path in enumerate(possible_paths):
