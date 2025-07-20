@@ -23,9 +23,20 @@ from main_monitor_dynamic import (
 def debug_log(msg):
     try:
         with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
-            f.write(msg + "\n")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] {msg}\n")
     except Exception as e:
         pass  # 避免日志写入影响主流程
+
+def clear_debug_log():
+    """清空调试日志文件"""
+    try:
+        with open("/tmp/chatmonitor_debug.log", "w", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] === GUI程序启动，日志已清空 ===\n")
+        print("✅ 调试日志已清空")
+    except Exception as e:
+        print(f"清空调试日志失败: {e}")
 
 def configure_tesseract():
     """配置tesseract路径"""
@@ -495,6 +506,9 @@ class ChatMonitorGUI:
 
 def main():
     """主函数"""
+    # 清空调试日志
+    clear_debug_log()
+    
     # 立即写入启动日志
     try:
         with open("/tmp/chatmonitor_start.log", "w") as f:

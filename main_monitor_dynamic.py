@@ -84,9 +84,20 @@ except ImportError:
 def debug_log(msg):
     try:
         with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
-            f.write(msg + "\n")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] {msg}\n")
     except Exception as e:
         pass  # 避免日志写入影响主流程
+
+def clear_debug_log():
+    """清空调试日志文件"""
+    try:
+        with open("/tmp/chatmonitor_debug.log", "w", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] === 程序启动，日志已清空 ===\n")
+        print("✅ 调试日志已清空")
+    except Exception as e:
+        print(f"清空调试日志失败: {e}")
 
 def get_config_path():
     """获取配置文件路径，支持 .app 包和开发环境"""
@@ -432,6 +443,9 @@ class YOLOModelManager:
         return detections
 
 def main():
+    # 清空调试日志
+    clear_debug_log()
+    
     print("✅ 动态配置监控已启动，修改 config_with_yolo.yaml 可实时生效")
     print(f"🕐 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
