@@ -283,8 +283,16 @@ class YOLOModelManager:
         """解析模型路径，支持 .app 包和开发环境"""
         import sys
         
+        print(f"🔍 开始解析模型路径: {model_path}")
+        print(f"🔍 当前工作目录: {os.getcwd()}")
+        print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
+        if getattr(sys, 'frozen', False):
+            print(f"🔍 sys.executable: {sys.executable}")
+            print(f"🔍 可执行文件目录: {os.path.dirname(sys.executable)}")
+        
         # 如果路径已经是绝对路径且存在，直接返回
         if os.path.isabs(model_path) and os.path.exists(model_path):
+            print(f"✅ 绝对路径存在: {model_path}")
             return model_path
             
         # 可能的模型路径
@@ -299,7 +307,14 @@ class YOLOModelManager:
             # 打包后的应用
             app_dir = os.path.dirname(sys.executable)
             resources_dir = os.path.join(app_dir, "..", "Resources")
-            possible_paths.insert(0, os.path.join(resources_dir, model_path))
+            resources_path = os.path.join(resources_dir, model_path)
+            possible_paths.insert(0, resources_path)
+            print(f"🔍 添加Resources路径: {resources_path}")
+        
+        print(f"🔍 尝试的路径列表:")
+        for i, path in enumerate(possible_paths):
+            exists = os.path.exists(path)
+            print(f"  {i+1}. {path} - {'✅存在' if exists else '❌不存在'}")
         
         # 查找存在的模型文件
         for path in possible_paths:

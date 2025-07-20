@@ -87,19 +87,14 @@ PYINSTALLER_CMD=(
     "--hidden-import=ultralytics"         # 预加载YOLO库
     "--hidden-import=cv2"
     "--hidden-import=numpy"
-    "--exclude-module=matplotlib"         # 排除不需要的模块
     "--hidden-import=tkinter"
     "--exclude-module=PyQt5"
     "--exclude-module=PyQt6"
     "--exclude-module=IPython"
     "--exclude-module=jupyter"
-    "--exclude-module=pandas"
-    "--exclude-module=scipy"
     "--exclude-module=scikit-learn"
     "--exclude-module=tensorflow"
-    "--exclude-module=torch"
     "--exclude-module=transformers"
-    "--exclude-module=ultralytics"
     "main_monitor_gui_app.py"
 )
 
