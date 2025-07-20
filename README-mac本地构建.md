@@ -1,4 +1,5 @@
 conda activate paddle
+打包过程无需用户输入y确认： --noconfirm 参数来自动确认："--noconfirm" 
 
 # mac本地构建脚本去掉拷贝文件步骤，直接在当前项目中（已经是精简版）打包
 build_macos_app.sh （基于~/study/promgramLang/python/work/chat_monitor_ai/yolov5-popup-detector/build_macos_app_simple.sh修改的）
@@ -573,5 +574,21 @@ PyInstaller排除了matplotlib、pandas、scipy等模块：这些模块虽然项
 从启动台或应用程序文件夹启动
 观察应用程序是否能正常检测聊天弹窗
 
+
+
+# r" and ALL ITS CONTENTS will be REMOVED! Continue? (y/N)y^M
+奇怪，打包过程中到这一步输入y再按enter就变成这样，无法往下执行
+这是因为PyInstaller在等待用户确认，但输入被截断了。让我们修改构建脚本，添加 --noconfirm 参数来自动确认："--noconfirm" 
+太好了！🎉 构建成功了！现在让我们测试打包后的应用程序：
+open release/ChatMonitor.app
+现在让我们检查应用程序是否正在运行，并查看日志：
+ps aux | grep ChatMonitor
+很好！应用程序正在运行。让我们检查控制台日志来查看模型加载情况：
+log show --predicate 'process == "ChatMonitor"' --last 2m
+从日志中可以看到应用程序正在运行，但没有看到我们的调试输出。这说明应用程序可能没有正确加载模型文件。让我们创建一个简单的测试脚本来验证模型路径：
+test_model_path.py
+现在让我们在打包后的应用程序中运行这个测试脚本：
+cp test_model_path.py dist/ChatMonitor.app/Contents/Resources/
+cd dist/ChatMonitor.app/Contents/MacOS && ./ChatMonitor test_model_path.py
 
 

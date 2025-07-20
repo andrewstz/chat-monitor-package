@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-测试模型路径解析
+测试打包后应用程序的模型路径解析
 """
 
 import os
@@ -9,9 +9,11 @@ import sys
 
 def test_model_path():
     """测试模型路径解析"""
-    print("🔍 测试模型路径解析")
+    print("🔍 测试打包后应用程序的模型路径解析")
     print(f"🔍 当前工作目录: {os.getcwd()}")
     print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
+    print(f"🔍 sys.executable: {sys.executable}")
+    print(f"🔍 sys._MEIPASS: {getattr(sys, '_MEIPASS', 'Not available')}")
     
     model_path = "models/best.pt"
     possible_paths = []
@@ -44,16 +46,38 @@ def test_model_path():
         parent_models_path = os.path.join("..", model_path)
         possible_paths.insert(0, parent_models_path)
         print(f"🔍 添加上级目录路径: {parent_models_path}")
+        
+        # 尝试从 sys._MEIPASS 目录加载（PyInstaller 临时目录）
+        if hasattr(sys, '_MEIPASS'):
+            meipass_path = os.path.join(sys._MEIPASS, model_path)
+            possible_paths.insert(0, meipass_path)
+            print(f"🔍 添加_MEIPASS路径: {meipass_path}")
+        
+        # 尝试从当前工作目录直接加载
+        cwd_path = os.path.join(os.getcwd(), model_path)
+        possible_paths.insert(0, cwd_path)
+        print(f"🔍 添加当前工作目录路径: {cwd_path}")
+        
+        # 尝试从脚本所在目录加载
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_models_path = os.path.join(script_dir, model_path)
+        possible_paths.insert(0, script_models_path)
+        print(f"🔍 添加脚本目录路径: {script_models_path}")
     
     print(f"🔍 尝试的路径列表:")
     for i, path in enumerate(possible_paths):
         exists = os.path.exists(path)
-        print(f"  {i+1}. {path} - {'✅存在' if exists else '❌不存在'}")
+        print(f"  {i+1}. {path} - {'✅ 存在' if exists else '❌ 不存在'}")
         if exists:
-            print(f"     ✅ 找到YOLO模型文件: {path}")
+            print(f"     📁 文件大小: {os.path.getsize(path)} bytes")
+    
+    # 查找第一个存在的路径
+    for path in possible_paths:
+        if os.path.exists(path):
+            print(f"✅ 找到模型文件: {path}")
             return path
     
-    print("❌ 未找到YOLO模型文件")
+    print("❌ 未找到模型文件")
     return None
 
 if __name__ == "__main__":

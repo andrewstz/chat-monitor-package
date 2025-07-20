@@ -27,6 +27,13 @@ except ImportError:
     YOLO_AVAILABLE = False
     print("⚠️  ultralytics未安装，无法使用YOLO模型")
 
+def debug_log(msg):
+    try:
+        with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except Exception as e:
+        pass  # 避免日志写入影响主流程
+
 def get_config_path():
     """获取配置文件路径，支持 .app 包和开发环境"""
     import os
@@ -283,7 +290,7 @@ class YOLOModelManager:
         """解析模型路径，支持 .app 包和开发环境"""
         import sys
         
-        print(f"🔍 开始解析模型路径: {model_path}")
+        debug_log(f"[YOLOModelManager._resolve_model_path] 启动, model_path={model_path}")
         print(f"🔍 当前工作目录: {os.getcwd()}")
         print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
         if getattr(sys, 'frozen', False):
@@ -310,43 +317,51 @@ class YOLOModelManager:
         # 如果路径已经是绝对路径且存在，直接返回
         if os.path.isabs(model_path) and os.path.exists(model_path):
             print(f"✅ 绝对路径存在: {model_path}")
+            debug_log(f"[YOLOModelManager._resolve_model_path] ✅ 绝对路径存在: {model_path}")
             return model_path
             
         # 可能的模型路径
-        possible_paths = [
-            model_path,  # 当前目录
-            os.path.join(os.path.dirname(__file__), model_path),  # 脚本目录
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), model_path),  # 绝对路径
-        ]
-        
-        # 如果是 .app 包，尝试从 Resources 目录加载
+        possible_paths = []
+        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试路径列表:")
+        # 1. PyInstaller专用临时目录
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            meipass_path = os.path.join(sys._MEIPASS, model_path)
+            possible_paths.append(meipass_path)
+            debug_log(f"[YOLOModelManager._resolve_model_path] 尝试_MEIPASS路径: {meipass_path}")
+        # 2. macOS .app Resources
         if getattr(sys, 'frozen', False):
-            # 打包后的应用
             app_dir = os.path.dirname(sys.executable)
-            resources_dir = os.path.join(app_dir, "..", "Resources")
-            resources_path = os.path.join(resources_dir, model_path)
-            possible_paths.insert(0, resources_path)
-            print(f"🔍 添加Resources路径: {resources_path}")
-            
-            # 也尝试从用户目录加载
-            user_home = os.path.expanduser("~")
-            user_models_path = os.path.join(user_home, "ChatMonitor", "models", "best.pt")
-            possible_paths.insert(0, user_models_path)
-            print(f"🔍 添加用户目录路径: {user_models_path}")
+            resources_path = os.path.join(app_dir, "..", "Resources", model_path)
+            possible_paths.append(resources_path)
+            debug_log(f"[YOLOModelManager._resolve_model_path] 尝试Resources路径: {resources_path}")
+        # 3. 用户目录
+        user_home = os.path.expanduser("~")
+        user_models_path = os.path.join(user_home, "ChatMonitor", "models", os.path.basename(model_path))
+        possible_paths.append(user_models_path)
+        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试用户目录: {user_models_path}")
+        # 4. 当前工作目录
+        cwd_path = os.path.join(os.getcwd(), model_path)
+        possible_paths.append(cwd_path)
+        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试当前工作目录: {cwd_path}")
+        # 5. 脚本目录
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_models_path = os.path.join(script_dir, model_path)
+        possible_paths.append(script_models_path)
+        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试脚本目录: {script_models_path}")
+        # 6. 绝对路径
+        abs_path = os.path.abspath(model_path)
+        possible_paths.append(abs_path)
+        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试绝对路径: {abs_path}")
         
-        print(f"🔍 尝试的路径列表:")
+        # 检查所有路径
         for i, path in enumerate(possible_paths):
             exists = os.path.exists(path)
-            print(f"  {i+1}. {path} - {'✅存在' if exists else '❌不存在'}")
-        
-        # 查找存在的模型文件
-        for path in possible_paths:
-            if os.path.exists(path):
-                print(f"✅ 找到YOLO模型文件: {path}")
+            debug_log(f"[YOLOModelManager._resolve_model_path] 检查: {path} - {'存在' if exists else '不存在'}")
+            if exists:
+                debug_log(f"[YOLOModelManager._resolve_model_path] ✅ 找到模型文件: {path}")
                 return path
         
-        # 如果都找不到，返回原始路径
-        print(f"⚠️  未找到YOLO模型文件: {model_path}")
+        debug_log(f"[YOLOModelManager._resolve_model_path] ❌ 未找到模型文件: {model_path}")
         return model_path
     def detect_popups(self, image):
         if not self.initialized:

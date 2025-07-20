@@ -66,6 +66,7 @@ PYINSTALLER_CMD=(
     "--onedir"                     # 打包成目录（启动更快）
     "--windowed"                   # 无控制台窗口
     "--name=ChatMonitor"           # 应用程序名称
+    "--noconfirm"                  # 自动确认覆盖
     "--add-data=config_with_yolo.yaml:."  # 添加配置文件
     "--add-data=fuzzy_matcher.py:."       # 添加模块
     "--add-data=config_manager.py:."      # 添加模块
@@ -95,6 +96,7 @@ PYINSTALLER_CMD=(
     "--exclude-module=scikit-learn"
     "--exclude-module=tensorflow"
     "--exclude-module=transformers"
+    "--debug=all"
     "main_monitor_gui_app.py"
 )
 

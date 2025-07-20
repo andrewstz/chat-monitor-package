@@ -20,6 +20,13 @@ from main_monitor_dynamic import (
     config_manager
 )
 
+def debug_log(msg):
+    try:
+        with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except Exception as e:
+        pass  # 避免日志写入影响主流程
+
 class LoadingWindow:
     """启动加载窗口"""
     def __init__(self, root):
@@ -185,6 +192,7 @@ class ChatMonitorGUI:
     
     def init_monitoring(self):
         """初始化监控配置"""
+        debug_log("[INIT] 开始初始化监控配置")
         try:
             conf = get_config()
             yolo_conf = conf.get("yolo", {})
@@ -192,25 +200,43 @@ class ChatMonitorGUI:
             yolo_model_path = yolo_conf.get("model_path", "models/best.pt")
             yolo_confidence = yolo_conf.get("confidence", 0.35)
             
+            debug_log(f"[INIT] YOLO配置: enabled={yolo_enabled}, model_path={yolo_model_path}, confidence={yolo_confidence}")
+            
             self.add_log_message(f"YOLO配置: enabled={yolo_enabled}, path={yolo_model_path}")
             
             if yolo_enabled:
-                # 检查文件是否存在
-                if not os.path.exists(yolo_model_path):
-                    self.add_log_message(f"错误: YOLO模型文件不存在: {yolo_model_path}")
+                debug_log(f"[INIT] 开始初始化YOLO模型: {yolo_model_path}")
+                
+                # 解析模型路径
+                resolved_model_path = self._resolve_model_path(yolo_model_path)
+                if not resolved_model_path:
+                    debug_log(f"[INIT] ❌ 无法解析YOLO模型路径: {yolo_model_path}")
+                    self.add_log_message(f"错误: 无法找到YOLO模型文件: {yolo_model_path}")
                     return
                 
+                debug_log(f"[INIT] ✅ 解析后的模型路径: {resolved_model_path}")
+                # 检查文件是否存在
+                if not os.path.exists(resolved_model_path):
+                    debug_log(f"[INIT] ❌ YOLO模型文件不存在: {resolved_model_path}")
+                    self.add_log_message(f"错误: YOLO模型文件不存在: {resolved_model_path}")
+                    return
+                
+                debug_log(f"[INIT] ✅ YOLO模型文件存在: {resolved_model_path}")
                 try:
-                    self.yolo_manager = YOLOModelManager(yolo_model_path, yolo_confidence)
+                    debug_log("[INIT] 创建YOLOModelManager实例...")
+                    self.yolo_manager = YOLOModelManager(resolved_model_path, yolo_confidence)
                     success = self.yolo_manager.initialized
+                    debug_log(f"[INIT] YOLO模型初始化结果: {'成功' if success else '失败'}")
                     self.add_log_message(f"YOLO模型初始化: {'成功' if success else '失败'}")
                     
                     if not success:
+                        debug_log("[INIT] YOLO模型初始化失败")
                         self.add_log_message("YOLO模型初始化失败，可能原因:")
                         self.add_log_message("1. 模型文件损坏")
                         self.add_log_message("2. ultralytics库版本不兼容")
                         self.add_log_message("3. 模型格式不正确")
                 except Exception as e:
+                    debug_log(f"[INIT] YOLO模型初始化异常: {str(e)}")
                     self.add_log_message(f"YOLO模型初始化异常: {str(e)}")
             else:
                 self.add_log_message("YOLO检测已禁用")
@@ -219,6 +245,57 @@ class ChatMonitorGUI:
             
         except Exception as e:
             self.add_log_message(f"配置初始化失败: {str(e)}")
+    
+    def _resolve_model_path(self, model_path):
+        """解析模型路径，支持打包后的应用程序"""
+        debug_log(f"[路径解析] 开始解析模型路径: {model_path}")
+        possible_paths = []
+        
+        # 1. PyInstaller专用临时目录
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            meipass_path = os.path.join(sys._MEIPASS, model_path)
+            possible_paths.append(meipass_path)
+            debug_log(f"[路径解析] 尝试_MEIPASS路径: {meipass_path}")
+        
+        # 2. macOS .app Resources
+        if getattr(sys, 'frozen', False):
+            app_dir = os.path.dirname(sys.executable)
+            resources_path = os.path.join(app_dir, "..", "Resources", model_path)
+            possible_paths.append(resources_path)
+            debug_log(f"[路径解析] 尝试Resources路径: {resources_path}")
+        
+        # 3. 用户目录
+        user_home = os.path.expanduser("~")
+        user_models_path = os.path.join(user_home, "ChatMonitor", "models", os.path.basename(model_path))
+        possible_paths.append(user_models_path)
+        debug_log(f"[路径解析] 尝试用户目录: {user_models_path}")
+        
+        # 4. 当前工作目录
+        cwd_path = os.path.join(os.getcwd(), model_path)
+        possible_paths.append(cwd_path)
+        debug_log(f"[路径解析] 尝试当前工作目录: {cwd_path}")
+        
+        # 5. 脚本目录
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_models_path = os.path.join(script_dir, model_path)
+        possible_paths.append(script_models_path)
+        debug_log(f"[路径解析] 尝试脚本目录: {script_models_path}")
+        
+        # 6. 绝对路径
+        abs_path = os.path.abspath(model_path)
+        possible_paths.append(abs_path)
+        debug_log(f"[路径解析] 尝试绝对路径: {abs_path}")
+        
+        # 检查所有路径
+        for path in possible_paths:
+            exists = os.path.exists(path)
+            debug_log(f"[路径解析] 检查: {path} - {'存在' if exists else '不存在'}")
+            if exists:
+                debug_log(f"[路径解析] ✅ 找到模型文件: {path}")
+                return path
+        
+        debug_log(f"[路径解析] ❌ 未找到模型文件: {model_path}")
+        return None
     
     def start_monitoring(self):
         """启动监控"""
@@ -367,6 +444,11 @@ class ChatMonitorGUI:
 
 def main():
     """主函数"""
+    debug_log("[MAIN] 应用程序启动")
+    debug_log(f"[MAIN] 当前工作目录: {os.getcwd()}")
+    debug_log(f"[MAIN] sys.frozen: {getattr(sys, 'frozen', False)}")
+    debug_log(f"[MAIN] sys.executable: {sys.executable}")
+    
     root = tk.Tk()
     
     # 设置 macOS 风格
