@@ -355,5 +355,11 @@ CI/CD 流程
 这样就不需要每次都手动输入选项了！
 
 
+# ❌ 构建失败，未找到可执行文件
+这是因为我将 --onefile 改成了 --onedir，但构建脚本还在寻找单文件的可执行文件。
+使用 --onedir 模式时，可执行文件在 dist/ChatMonitor/ChatMonitor 而不是 dist/ChatMonitor。让我修复这个问题：
+if [ -f "dist/ChatMonitor/ChatMonitor" ]; 原来：if [ -f "dist/ChatMonitor" ];
 
-
+当系统中有多个同名应用时，open -a ChatMonitor 通常会打开：
+最新修改的应用程序，也就是 dist/ChatMonitor.app
+或者系统会提示你选择要打开哪个版本

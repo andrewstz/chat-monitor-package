@@ -107,8 +107,8 @@ echo "🚀 执行: ${PYINSTALLER_CMD[*]}"
 "${PYINSTALLER_CMD[@]}"
 
 # 检查构建结果
-if [ -f "dist/ChatMonitor" ]; then
-    echo "✅ 可执行文件创建成功: dist/ChatMonitor"
+if [ -f "dist/ChatMonitor/ChatMonitor" ]; then
+    echo "✅ 可执行文件创建成功: dist/ChatMonitor/ChatMonitor"
     
     # 创建.app包
     echo "📦 创建.app包..."
@@ -124,7 +124,7 @@ if [ -f "dist/ChatMonitor" ]; then
     mkdir -p "$RESOURCES_DIR"
     
     # 复制可执行文件
-    cp "dist/ChatMonitor" "$MACOS_DIR/"
+    cp "dist/ChatMonitor/ChatMonitor" "$MACOS_DIR/"
     chmod +x "$MACOS_DIR/ChatMonitor"
     
     # 复制资源文件（如果存在）
@@ -136,6 +136,11 @@ if [ -f "dist/ChatMonitor" ]; then
     if [ -d "test_img" ]; then
         cp -r test_img "$RESOURCES_DIR/"
         echo "  ✅ 复制 test_img/"
+    fi
+    
+    if [ -d "models" ]; then
+        cp -r models "$RESOURCES_DIR/"
+        echo "  ✅ 复制 models/"
     fi
     
     # 复制配置文件到外部可访问位置

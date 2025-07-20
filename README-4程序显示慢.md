@@ -36,8 +36,14 @@ build_macos_app.sh
 权限处理：在加载过程中处理，不影响主界面
 
 
-
-
-
-
-
+# 窗口显示：YOLO配置: enabled=True, path=models/best.pt
+这是因为应用包运行时的工作目录不同
+🔧 解决方案
+1. 检查应用包内的文件结构
+ls -la release/ChatMonitor.app/Contents/Resources/
+2. 复制模型文件到应用包
+cp -r models release/ChatMonitor.app/Contents/Resources/
+3. 验证模型文件已复制
+ls -la release/ChatMonitor.app/Contents/Resources/models/
+4. 修改构建脚本，自动包含模型文件 build_macos_app.sh
+cp -r models "$RESOURCES_DIR/"
