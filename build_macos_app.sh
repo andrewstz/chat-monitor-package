@@ -23,7 +23,7 @@ echo "✅ Python版本: $(python3 --version)"
 
 # 检查必要文件
 REQUIRED_FILES=(
-    "main_monitor_dynamic.py"
+    "main_monitor_gui_app.py"
     "config_with_yolo.yaml"
     "fuzzy_matcher.py"
     "config_manager.py"
@@ -63,7 +63,7 @@ echo "🔨 构建macOS应用程序..."
 # 创建PyInstaller命令
 PYINSTALLER_CMD=(
     "python3" "-m" "PyInstaller"
-    "--onefile"                    # 打包成单个文件
+    "--onedir"                     # 打包成目录（启动更快）
     "--windowed"                   # 无控制台窗口
     "--name=ChatMonitor"           # 应用程序名称
     "--add-data=config_with_yolo.yaml:."  # 添加配置文件
@@ -84,8 +84,11 @@ PYINSTALLER_CMD=(
     "--hidden-import=pytesseract"
     "--hidden-import=playsound"
     "--hidden-import=watchdog"
+    "--hidden-import=ultralytics"         # 预加载YOLO库
+    "--hidden-import=cv2"
+    "--hidden-import=numpy"
     "--exclude-module=matplotlib"         # 排除不需要的模块
-    "--exclude-module=tkinter"
+    "--hidden-import=tkinter"
     "--exclude-module=PyQt5"
     "--exclude-module=PyQt6"
     "--exclude-module=IPython"
@@ -97,7 +100,7 @@ PYINSTALLER_CMD=(
     "--exclude-module=torch"
     "--exclude-module=transformers"
     "--exclude-module=ultralytics"
-    "main_monitor_dynamic.py"
+    "main_monitor_gui_app.py"
 )
 
 echo "🚀 执行: ${PYINSTALLER_CMD[*]}"

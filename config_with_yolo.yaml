@@ -17,7 +17,7 @@ monitor:
 # YOLO模型配置
 yolo:
   enabled: true
-  model_path: "../runs/detect/train/weights/best.pt"  # 使用训练好的模型
+  model_path: "models/best.pt"  # 使用训练好的模型
   confidence: 0.35 # 检测置信度阈值（降低以提高检测率）
   use_fallback: true  # 如果YOLO失败，使用全屏OCR备用方案
 
