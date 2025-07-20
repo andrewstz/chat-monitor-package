@@ -273,9 +273,43 @@ def detect_and_ocr_with_yolo(image, yolo_manager, ocr_lang, ocr_psm):
 
 class YOLOModelManager:
     def __init__(self, model_path, confidence=0.35):
-        self.model = YOLO(model_path) if YOLO_AVAILABLE and os.path.exists(model_path) else None
+        # 处理模型路径，支持 .app 包和开发环境
+        resolved_model_path = self._resolve_model_path(model_path)
+        self.model = YOLO(resolved_model_path) if YOLO_AVAILABLE and os.path.exists(resolved_model_path) else None
         self.confidence = confidence
         self.initialized = self.model is not None
+        
+    def _resolve_model_path(self, model_path):
+        """解析模型路径，支持 .app 包和开发环境"""
+        import sys
+        
+        # 如果路径已经是绝对路径且存在，直接返回
+        if os.path.isabs(model_path) and os.path.exists(model_path):
+            return model_path
+            
+        # 可能的模型路径
+        possible_paths = [
+            model_path,  # 当前目录
+            os.path.join(os.path.dirname(__file__), model_path),  # 脚本目录
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), model_path),  # 绝对路径
+        ]
+        
+        # 如果是 .app 包，尝试从 Resources 目录加载
+        if getattr(sys, 'frozen', False):
+            # 打包后的应用
+            app_dir = os.path.dirname(sys.executable)
+            resources_dir = os.path.join(app_dir, "..", "Resources")
+            possible_paths.insert(0, os.path.join(resources_dir, model_path))
+        
+        # 查找存在的模型文件
+        for path in possible_paths:
+            if os.path.exists(path):
+                print(f"✅ 找到YOLO模型文件: {path}")
+                return path
+        
+        # 如果都找不到，返回原始路径
+        print(f"⚠️  未找到YOLO模型文件: {model_path}")
+        return model_path
     def detect_popups(self, image):
         if not self.initialized:
             return []

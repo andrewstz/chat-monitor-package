@@ -360,6 +360,72 @@ CI/CD 流程
 使用 --onedir 模式时，可执行文件在 dist/ChatMonitor/ChatMonitor 而不是 dist/ChatMonitor。让我修复这个问题：
 if [ -f "dist/ChatMonitor/ChatMonitor" ]; 原来：if [ -f "dist/ChatMonitor" ];
 
+
+
+# 用open -a ChatMonitor打开的是哪里的app
 当系统中有多个同名应用时，open -a ChatMonitor 通常会打开：
 最新修改的应用程序，也就是 dist/ChatMonitor.app
 或者系统会提示你选择要打开哪个版本
+🧹 建议清理
+为了避免混淆，建议：
+rm -rf release/ChatMonitor.app
+
+## 但是使用build_macos_app.sh构建完显示的是这个喔，这会不会是我启动后总是提示Yolo找不到模型的原因？
+你说得对！这确实可能是YOLO模型找不到的原因。让我分析一下问题：
+🔍 问题分析
+从构建输出可以看到：
+构建脚本显示应用程序在：release/ChatMonitor.app
+但实际运行时可能打开的是：dist/ChatMonitor.app
+这导致两个问题：
+1.路径不一致：构建脚本复制到 release/ 但运行时可能从 dist/ 启动
+2.模型文件路径错误：YOLO模型文件可能没有正确复制到运行的应用中
+ls -la dist/ChatMonitor.app/Contents/Resources/ 2>/dev/null || echo "dist版本没有Resources目录"
+太好了！我看到 dist/ChatMonitor.app/Contents/Resources/ 目录中确实有 models 文件夹。让我检查一下模型文件：
+ls -la dist/ChatMonitor.app/Contents/Resources/models/
+完美！模型文件确实存在。现在让我检查配置文件：
+cat dist/ChatMonitor.app/Contents/Resources/config_with_yolo.yaml
+�� 问题找到了！
+配置文件中的模型路径是 models/best.pt，这是相对路径。当应用程序运行时，它会在应用程序的工作目录中查找这个路径。
+让我检查一下应用程序的工作目录设置：
+我需要查看应用程序是如何处理路径的。让我检查 main_monitor_dynamic.py 中的路径处理
+现在我需要查看 YOLOModelManager 是如何处理模型路径的：
+`现在我明白问题了！在 YOLOModelManager 的 __init__ 方法中，它直接使用传入的 model_path，但没有处理相对路径的问题。当应用程序运行时，工作目录可能不是应用程序包内的 Resources 目录`。
+main_monitor_dynamic.py
+现在重新构建应用程序来测试修复：
+conda activate paddle && ./build_macos_app.sh
+太好了！构建成功了。现在让我们测试一下修复后的应用程序：
+open dist/ChatMonitor.app
+🚀 下一步
+测试应用程序：检查 GUI 是否显示正确的 YOLO 初始化状态
+验证功能：确认弹窗检测功能正常工作
+清理旧版本：可以删除 release/ChatMonitor.app（如果还存在）
+
+
+## 为啥上面构建显示的是：
+📁 应用程序: release/ChatMonitor.app
+📦 安装包: release/ChatMonitor-macOS-v1.0.0.dmg
+打开的却是open dist/ChatMonitor.app，你确定最新打包的是在dist里面而不是release里面？
+你说得对！让我仔细检查一下构建脚本的逻辑：
+ls -la dist/ release/ 2>/dev/null
+ls -la dist/ChatMonitor.app/Contents/Resources/ release/ChatMonitor.app/Contents/Resources/ 2>/dev/null
+你完全正确！
+从检查结果可以看出：
+�� 两个版本的区别
+dist/ChatMonitor.app：
+这是 PyInstaller 直接生成的版本
+包含所有库文件和符号链接
+文件大小：约 170M
+包含 models 文件夹
+release/ChatMonitor.app：
+这是构建脚本手动创建的版本
+包含所有库文件的实际副本（不是符号链接）
+文件大小：约 261M
+也包含 models 文件夹
+🔍 构建脚本的逻辑
+构建脚本确实：
+先创建 dist/ChatMonitor.app（PyInstaller 生成）
+然后复制到 release/ChatMonitor.app（手动创建）
+最后显示 release/ChatMonitor.app 作为最终结果
+�� 正确的使用方式
+现在你应该使用：
+open release/ChatMonitor.app
