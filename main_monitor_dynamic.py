@@ -13,6 +13,60 @@ import pyautogui
 import cv2
 import numpy as np
 import pytesseract
+
+# 配置tesseract路径，支持打包后的应用程序
+def configure_tesseract():
+    """配置tesseract路径"""
+    import sys
+    import subprocess
+    
+    debug_log("[TESSERACT] 开始配置tesseract路径")
+    
+    # 可能的tesseract路径
+    possible_paths = [
+        "/usr/local/bin/tesseract",  # Homebrew安装
+        "/opt/homebrew/bin/tesseract",  # Apple Silicon Homebrew
+        "/usr/bin/tesseract",  # 系统安装
+        "tesseract",  # PATH中的tesseract
+    ]
+    
+    # 如果是打包后的应用程序，尝试从系统PATH查找
+    if getattr(sys, 'frozen', False):
+        try:
+            # 尝试使用which命令查找tesseract
+            result = subprocess.run(['which', 'tesseract'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                tesseract_path = result.stdout.strip()
+                possible_paths.insert(0, tesseract_path)
+                debug_log(f"[TESSERACT] 通过which找到tesseract: {tesseract_path}")
+        except Exception as e:
+            debug_log(f"[TESSERACT] which命令失败: {str(e)}")
+    
+    # 测试每个路径
+    for path in possible_paths:
+        try:
+            if path == "tesseract":
+                # 测试PATH中的tesseract
+                result = subprocess.run(['tesseract', '--version'], 
+                                      capture_output=True, text=True, timeout=5)
+            else:
+                # 测试具体路径
+                result = subprocess.run([path, '--version'], 
+                                      capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                debug_log(f"[TESSERACT] ✅ 找到可用的tesseract: {path}")
+                pytesseract.pytesseract.tesseract_cmd = path
+                return True
+        except Exception as e:
+            debug_log(f"[TESSERACT] 测试路径失败 {path}: {str(e)}")
+            continue
+    
+    debug_log("[TESSERACT] ❌ 未找到可用的tesseract")
+    return False
+
+# 初始化时配置tesseract（移到函数定义之后）
 import requests  # 添加requests导入
 from typing import List, Dict
 from datetime import datetime
@@ -508,4 +562,6 @@ def main():
             time.sleep(check_interval)
 
 if __name__ == "__main__":
+    # 初始化时配置tesseract
+    configure_tesseract()
     main() 

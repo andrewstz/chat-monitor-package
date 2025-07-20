@@ -252,3 +252,13 @@ cat /tmp/chatmonitor_debug.log
 我们需要添加 _resolve_model_path 方法到 ChatMonitorGUI 类中：
 现在我们需要添加 _resolve_model_path 方法到 ChatMonitorGUI 类中：
 
+
+
+# 现在报这个新的错误：tesseract is not installed or it's not in your PATH. See README file for more information.
+这个错误是因为打包后的应用程序找不到 tesseract 可执行文件。在 macOS 上，tesseract 通常通过 Homebrew 安装，但打包后的应用程序无法访问系统的 PATH。
+让我们修复这个问题：
+configure_tesseract
+让我们查看 pytesseract 的配置部分：
+现在让我们也在 main_monitor_gui_app.py 中添加 tesseract 配置：
+现在让我们在 main 函数中调用 tesseract 配置：
+

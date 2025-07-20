@@ -27,6 +27,57 @@ def debug_log(msg):
     except Exception as e:
         pass  # 避免日志写入影响主流程
 
+def configure_tesseract():
+    """配置tesseract路径"""
+    import subprocess
+    
+    debug_log("[TESSERACT] 开始配置tesseract路径")
+    
+    # 可能的tesseract路径
+    possible_paths = [
+        "/usr/local/bin/tesseract",  # Homebrew安装
+        "/opt/homebrew/bin/tesseract",  # Apple Silicon Homebrew
+        "/usr/bin/tesseract",  # 系统安装
+        "tesseract",  # PATH中的tesseract
+    ]
+    
+    # 如果是打包后的应用程序，尝试从系统PATH查找
+    if getattr(sys, 'frozen', False):
+        try:
+            # 尝试使用which命令查找tesseract
+            result = subprocess.run(['which', 'tesseract'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                tesseract_path = result.stdout.strip()
+                possible_paths.insert(0, tesseract_path)
+                debug_log(f"[TESSERACT] 通过which找到tesseract: {tesseract_path}")
+        except Exception as e:
+            debug_log(f"[TESSERACT] which命令失败: {str(e)}")
+    
+    # 测试每个路径
+    for path in possible_paths:
+        try:
+            if path == "tesseract":
+                # 测试PATH中的tesseract
+                result = subprocess.run(['tesseract', '--version'], 
+                                      capture_output=True, text=True, timeout=5)
+            else:
+                # 测试具体路径
+                result = subprocess.run([path, '--version'], 
+                                      capture_output=True, text=True, timeout=5)
+            
+            if result.returncode == 0:
+                debug_log(f"[TESSERACT] ✅ 找到可用的tesseract: {path}")
+                import pytesseract
+                pytesseract.pytesseract.tesseract_cmd = path
+                return True
+        except Exception as e:
+            debug_log(f"[TESSERACT] 测试路径失败 {path}: {str(e)}")
+            continue
+    
+    debug_log("[TESSERACT] ❌ 未找到可用的tesseract")
+    return False
+
 class LoadingWindow:
     """启动加载窗口"""
     def __init__(self, root):
@@ -444,12 +495,32 @@ class ChatMonitorGUI:
 
 def main():
     """主函数"""
-    debug_log("[MAIN] 应用程序启动")
-    debug_log(f"[MAIN] 当前工作目录: {os.getcwd()}")
-    debug_log(f"[MAIN] sys.frozen: {getattr(sys, 'frozen', False)}")
-    debug_log(f"[MAIN] sys.executable: {sys.executable}")
+    # 立即写入启动日志
+    try:
+        with open("/tmp/chatmonitor_start.log", "w") as f:
+            f.write("应用程序开始启动\n")
+    except:
+        pass
     
-    root = tk.Tk()
+    try:
+        debug_log("[MAIN] 应用程序启动")
+        debug_log(f"[MAIN] 当前工作目录: {os.getcwd()}")
+        debug_log(f"[MAIN] sys.frozen: {getattr(sys, 'frozen', False)}")
+        debug_log(f"[MAIN] sys.executable: {sys.executable}")
+        
+        # 配置tesseract
+        debug_log("[MAIN] 开始配置tesseract...")
+        configure_tesseract()
+        debug_log("[MAIN] tesseract配置完成")
+        
+        debug_log("[MAIN] 创建tkinter根窗口...")
+        root = tk.Tk()
+        debug_log("[MAIN] tkinter根窗口创建成功")
+    except Exception as e:
+        debug_log(f"[MAIN] 启动失败: {str(e)}")
+        import traceback
+        debug_log(f"[MAIN] 错误详情: {traceback.format_exc()}")
+        raise
     
     # 设置 macOS 风格
     try:
