@@ -228,6 +228,14 @@ class ChatMonitorGUI:
         )
         self.clear_button.pack(side=tk.LEFT, padx=(0, 10))
         
+        # 发信人设置按钮
+        self.contacts_button = ttk.Button(
+            self.button_frame,
+            text="发信人设置",
+            command=self.open_contacts_settings
+        )
+        self.contacts_button.pack(side=tk.LEFT, padx=(0, 10))
+        
         # 关闭按钮
         self.close_button = ttk.Button(
             self.button_frame,
@@ -576,6 +584,206 @@ class ChatMonitorGUI:
         except Exception as e:
             self.safe_add_log_message(f"❌ 自动启动监控失败: {str(e)}")
             debug_log(f"[AUTO_START] 自动启动监控失败: {str(e)}")
+    
+    def open_contacts_settings(self):
+        """打开发信人设置窗口"""
+        try:
+            # 创建设置窗口
+            settings_window = tk.Toplevel(self.root)
+            settings_window.title("发信人设置")
+            settings_window.geometry("500x400")
+            settings_window.resizable(True, True)
+            settings_window.transient(self.root)  # 设置为主窗口的子窗口
+            settings_window.grab_set()  # 模态窗口
+            
+            # 设置窗口层级，确保显示在主窗口之上
+            settings_window.lift()  # 提升到顶层
+            settings_window.focus_set()  # 设置焦点
+            settings_window.attributes('-topmost', True)  # 设置为最顶层
+            
+            # 居中显示
+            settings_window.update_idletasks()
+            x = (settings_window.winfo_screenwidth() // 2) - (settings_window.winfo_width() // 2)
+            y = (settings_window.winfo_screenheight() // 2) - (settings_window.winfo_height() // 2)
+            settings_window.geometry(f"+{x}+{y}")
+            
+            # 创建界面
+            self.create_contacts_settings_ui(settings_window)
+            
+            # 窗口创建完成后，取消topmost属性，但保持焦点
+            settings_window.after(100, lambda: settings_window.attributes('-topmost', False))
+            
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 打开发信人设置失败: {str(e)}")
+            debug_log(f"[CONTACTS] 打开设置窗口失败: {str(e)}")
+    
+    def create_contacts_settings_ui(self, window):
+        """创建发信人设置界面"""
+        # 主框架
+        main_frame = ttk.Frame(window, padding="20")
+        main_frame.grid(row=0, column=0, sticky="nsew")
+        
+        # 配置网格权重
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(1, weight=1)
+        
+        # 标题
+        title_label = ttk.Label(main_frame, text="监控发信人设置", font=("Arial", 16, "bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        
+        # 说明文字
+        instruction_label = ttk.Label(main_frame, text="请输入要监控的发信人姓名，多个发信人用逗号分隔：", 
+                                    font=("Arial", 10))
+        instruction_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        
+        # 示例
+        example_label = ttk.Label(main_frame, text="示例：张三,李四,王五 或 张三，李四，王五", 
+                                font=("Arial", 9), foreground="gray")
+        example_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 20))
+        
+        # 输入框标签
+        input_label = ttk.Label(main_frame, text="发信人列表：", font=("Arial", 11, "bold"))
+        input_label.grid(row=3, column=0, sticky="w", pady=(0, 5))
+        
+        # 输入框
+        contact_text = tk.Text(main_frame, height=8, width=50, font=("Arial", 11))
+        contact_text.grid(row=4, column=0, columnspan=2, sticky="nsew", pady=(0, 20))
+        
+        # 配置文本框的滚动条
+        text_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=contact_text.yview)
+        text_scrollbar.grid(row=4, column=2, sticky="ns")
+        contact_text.configure(yscrollcommand=text_scrollbar.set)
+        
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=5, column=0, columnspan=2, pady=(20, 0))
+        
+        # 状态标签
+        status_label = ttk.Label(main_frame, text="", font=("Arial", 9))
+        status_label.grid(row=6, column=0, columnspan=2, pady=(10, 0))
+        
+        # 加载默认值
+        self.load_contacts_to_text(contact_text, status_label)
+        
+        # 保存按钮
+        save_button = ttk.Button(button_frame, text="保存设置", 
+                                command=lambda: self.save_contacts_from_text(contact_text, status_label, window))
+        save_button.pack(side="left", padx=(0, 10))
+        
+        # 重置按钮
+        reset_button = ttk.Button(button_frame, text="重置为默认", 
+                                command=lambda: self.load_contacts_to_text(contact_text, status_label))
+        reset_button.pack(side="left", padx=(0, 10))
+        
+        # 清空按钮
+        clear_button = ttk.Button(button_frame, text="清空", 
+                                command=lambda: self.clear_contacts_text(contact_text, status_label))
+        clear_button.pack(side="left", padx=(0, 10))
+        
+        # 取消按钮
+        cancel_button = ttk.Button(button_frame, text="取消", command=window.destroy)
+        cancel_button.pack(side="left")
+    
+    def load_contacts_to_text(self, text_widget, status_label):
+        """加载发信人到文本框"""
+        try:
+            conf = get_config()
+            default_contacts = conf.get("chat_app", {}).get("target_contacts", [])
+            
+            if default_contacts:
+                contacts_str = ", ".join(default_contacts)
+                text_widget.delete(1.0, tk.END)
+                text_widget.insert(1.0, contacts_str)
+                self.update_status_label(status_label, f"已加载 {len(default_contacts)} 个默认发信人")
+            else:
+                self.update_status_label(status_label, "未找到默认发信人配置")
+                
+        except Exception as e:
+            self.update_status_label(status_label, f"加载配置文件失败: {str(e)}")
+    
+    def parse_contacts(self, text):
+        """解析发信人文本，支持中英文逗号"""
+        import re
+        
+        if not text.strip():
+            return []
+        
+        # 使用正则表达式分割，支持中英文逗号
+        contacts = re.split(r'[,，]', text)
+        
+        # 清理每个联系人（去除空格和换行）
+        cleaned_contacts = []
+        for contact in contacts:
+            contact = contact.strip()
+            if contact:  # 只添加非空联系人
+                cleaned_contacts.append(contact)
+        
+        return cleaned_contacts
+    
+    def save_contacts_from_text(self, text_widget, status_label, window):
+        """从文本框保存发信人设置"""
+        try:
+            # 获取输入文本
+            text = text_widget.get(1.0, tk.END).strip()
+            
+            # 解析发信人
+            contacts = self.parse_contacts(text)
+            
+            if not contacts:
+                from tkinter import messagebox
+                messagebox.showwarning("警告", "请输入至少一个发信人姓名")
+                return
+            
+            # 读取现有配置
+            conf = get_config()
+            
+            # 更新发信人配置
+            if "chat_app" not in conf:
+                conf["chat_app"] = {}
+            
+            conf["chat_app"]["target_contacts"] = contacts
+            
+            # 保存配置文件
+            config_path = os.path.expanduser("~/ChatMonitor/config_with_yolo.yaml")
+            import yaml
+            with open(config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(conf, f, default_flow_style=False, allow_unicode=True)
+            
+            # 立即更新内存中的目标联系人（这会同时更新TARGET_CONTACTS和FUZZY_MATCHER）
+            from main_monitor_dynamic import update_target_contacts
+            update_target_contacts(contacts)
+            
+            # 验证更新是否成功
+            from main_monitor_dynamic import TARGET_CONTACTS, FUZZY_MATCHER
+            debug_log(f"[CONTACTS] TARGET_CONTACTS已更新: {TARGET_CONTACTS}")
+            if FUZZY_MATCHER and hasattr(FUZZY_MATCHER, 'target_contacts'):
+                debug_log(f"[CONTACTS] FUZZY_MATCHER已更新: {FUZZY_MATCHER.target_contacts}")
+            
+            self.update_status_label(status_label, f"已保存 {len(contacts)} 个发信人: {', '.join(contacts)}")
+            self.safe_add_log_message(f"✅ 发信人设置已更新: {', '.join(contacts)}")
+            
+            from tkinter import messagebox
+            messagebox.showinfo("成功", f"已保存 {len(contacts)} 个发信人设置，监控将立即生效")
+            
+            # 关闭设置窗口
+            window.destroy()
+            
+        except Exception as e:
+            error_msg = f"保存配置文件失败: {str(e)}"
+            self.update_status_label(status_label, error_msg)
+            from tkinter import messagebox
+            messagebox.showerror("错误", error_msg)
+    
+    def clear_contacts_text(self, text_widget, status_label):
+        """清空发信人文本框"""
+        text_widget.delete(1.0, tk.END)
+        self.update_status_label(status_label, "已清空发信人列表")
+    
+    def update_status_label(self, status_label, message):
+        """更新状态标签"""
+        status_label.config(text=message)
+        status_label.winfo_toplevel().update_idletasks()
     
     def close_program(self):
         """关闭程序"""

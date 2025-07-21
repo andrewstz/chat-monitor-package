@@ -101,3 +101,44 @@ build_macos_app.sh
 3. 构建带 GUI 的 ChatMonitor.app
 conda activate paddle && ./build_macos_app.sh
 
+
+
+# 利用tkinter做一个输入框，用于给用户输入要监控的发信人，提示用户可以用逗号隔开（程序自动分别中英文逗号），输入框的默认值是从配置字段target_contacts读出来的多个发信人
+python3 contact_input_gui.py
+start_contact_gui.sh
+chmod +x start_contact_gui.sh
+完成！我已经创建了一个使用tkinter的发信人输入GUI界面。这个界面具有以下功能：
+主要功能：
+输入框：用户可以输入要监控的发信人姓名
+智能解析：自动识别中英文逗号（, 和 ，）作为分隔符
+默认值加载：从配置文件 ~/ChatMonitor/config_with_yolo.yaml 的 target_contacts 字段读取默认发信人
+保存功能：将用户输入的发信人保存回配置文件
+重置功能：可以重置为默认发信人
+清空功能：清空输入框
+状态显示：实时显示操作状态
+
+技术实现：
+界面：使用 tk.Toplevel 创建模态窗口
+解析：正则表达式 re.split(r'[,，]', text) 分割文本
+更新：调用 update_target_contacts() 立即更新内存中的目标联系人
+保存：写入 ~/ChatMonitor/config_with_yolo.yaml 用户配置文件
+
+
+# 两个问题：1、点击发信人设置弹框没法让它跑到主程序界面的上一层； 2、修改好了发信人，弹框识别没有识别到发信人
+open_contacts_settings
+我看到问题了！监控线程使用的是FUZZY_MATCHER，但是FUZZY_MATCHER是在程序启动时创建的，不会自动更新。我需要修改保存发信人的方法，确保FUZZY_MATCHER也被更新：
+    搜注释（ 重新创建FUZZY_MATCHER以确保使用新的发信人列表 ）
+。。。cursor绕了好一会，最后 用 python3 test_gui_contacts_update.py 测试成功
+�� 问题修复完成
+问题1：弹框层级问题 ✅
+修复方法：
+添加了 settings_window.lift() 提升窗口层级
+添加了 settings_window.focus_set() 设置焦点
+添加了 settings_window.attributes('-topmost', True) 设置为最顶层
+延迟100ms后取消topmost属性，保持焦点
+问题2：发信人识别问题 ✅
+修复方法：
+确保update_target_contacts()函数被正确调用
+该函数会同时更新TARGET_CONTACTS和重新创建FUZZY_MATCHER
+在GUI中直接访问模块变量而不是导入的变量
+
