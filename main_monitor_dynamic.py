@@ -72,7 +72,12 @@ from typing import List, Dict
 from datetime import datetime
 from fuzzy_matcher import FuzzyMatcher
 from config_manager import init_config_manager
-from network_monitor import NetworkMonitor
+# 网络监控已简化为函数，不再需要NetworkMonitor类
+
+# 网络监控全局变量
+last_network_check_time = time.time()
+network_failure_count = 0
+network_alert_sent = False
 
 try:
     from ultralytics import YOLO
@@ -315,14 +320,52 @@ def check_process(app_name):
     return False
 
 def check_network():
-    """简单ping一下，判断网络。ping -c 1发送 1 个 ICMP 测试包； 2>&1把标准错误输出（错误信息）也重定向到标准输出（即也丢弃到 /dev/null）。 
-    脚本里用来“静默”检测网络是否可达，通常后面会用 $? 判断命令是否成功（0=通，非0=不通）；
-    os.system 返回的是命令的“退出码”（exit code），而不是输出内容，在 Linux/Unix/Mac 下，0 表示命令执行成功，非0表示失败。 """
+    """简单网络检测"""
     try:
         response = requests.head("https://www.google.com", timeout=5)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
+
+def check_network_with_alert():
+    """网络检测带警报功能"""
+    global last_network_check_time, network_failure_count, network_alert_sent
+    
+    current_time = time.time()
+    
+    # 从配置中获取参数
+    conf = get_config()
+    network_conf = conf.get("network_monitor", {})
+    check_interval = network_conf.get("check_interval", 60)  # 默认60秒
+    consecutive_failures = network_conf.get("consecutive_failures", 3)  # 默认3次
+    tolerance_minutes = network_conf.get("tolerance_minutes", 1)  # 默认1分钟
+    
+    # 检查网络
+    network_ok = check_network()
+    
+    if network_ok:
+        # 网络正常，重置计数器
+        if network_failure_count > 0:
+            print(f"✅ 网络恢复正常 - {datetime.now().strftime('%H:%M:%S')}")
+        network_failure_count = 0
+        network_alert_sent = False
+        last_network_check_time = current_time
+        return True
+    else:
+        # 网络异常
+        network_failure_count += 1
+        print(f"❌ 网络检测失败 ({network_failure_count}/{consecutive_failures}) - {datetime.now().strftime('%H:%M:%S')}")
+        
+        # 检查是否达到连续失败阈值和时间阈值
+        time_since_last_check = current_time - last_network_check_time
+        if (network_failure_count >= consecutive_failures and 
+            time_since_last_check >= tolerance_minutes * 60):
+            
+            print(f"🚨 网络异常警报 - 连续失败{network_failure_count}次，超过{tolerance_minutes}分钟")
+            play_sound("warning")
+            return True  # 继续运行，不中断程序
+        
+        return True  # 继续运行，不中断程序
 
 def screenshot():
     try:
@@ -475,18 +518,13 @@ def main():
     print(f"🔍 调试模式: {'开启' if debug_verbose else '关闭'}")
     print("-" * 50)
 
-    # 初始化网络监控器
+    # 初始化网络监控
     network_conf = conf.get("network_monitor", {})
-    net_monitor = None
-    if network_conf.get("enabled", True):
-        net_monitor = NetworkMonitor(
-            consecutive_failures=network_conf.get("consecutive_failures", 3),
-            check_interval=network_conf.get("check_interval", 60),
-            timeout=network_conf.get("timeout", 10),
-            tolerance_minutes=network_conf.get("tolerance_minutes", 15)
-        )
-        net_monitor.start_monitoring()
-        print(f"🌐 网络监控已启动 - 连续失败阈值: {net_monitor.consecutive_failures}, 容错时间: {net_monitor.tolerance_minutes}分钟")
+    network_enabled = network_conf.get("enabled", True)
+    if network_enabled:
+        consecutive_failures = network_conf.get("consecutive_failures", 3)
+        tolerance_minutes = network_conf.get("tolerance_minutes", 1)
+        print(f"🌐 网络监控已启用 - 连续失败阈值: {consecutive_failures}, 容错时间: {tolerance_minutes}分钟")
 
     detection_count = 0
     last_status_time = time.time()
@@ -506,17 +544,9 @@ def main():
                 time.sleep(check_interval)
                 continue
 
-            # 检查网络（用network_monitor警报机制）
-            if net_monitor:
-                alert = net_monitor.get_alert()
-                if alert:
-                    if alert['type'] == 'network_down':
-                        play_sound("warning")
-                        print("网络连接异常（已连续多次失败并超过容错时间）")
-                        time.sleep(check_interval)
-                        continue
-                    elif alert['type'] == 'network_restored':
-                        print("网络恢复正常")
+            # 检查网络（简单函数判断）
+            if network_enabled:
+                check_network_with_alert()  # 每次检测都调用，不暂停程序
                         
             # 定期输出状态信息
             if current_time - last_status_time > 60:  # 每分钟输出一次状态

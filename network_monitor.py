@@ -130,8 +130,12 @@ class NetworkMonitor:
                 not self.is_network_down and 
                 not self.alert_sent):
                 
-                # 检查容错时间
-                if self.last_success_time:
+                # 修复：首次失败时设置当前时间为最后成功时间
+                if self.last_success_time is None:
+                    self.last_success_time = current_time
+                    print(f"⏳ 首次网络失败，开始计时 - {current_time.strftime('%H:%M:%S')}")
+                else:
+                    # 检查容错时间
                     time_since_success = current_time - self.last_success_time
                     if time_since_success >= timedelta(minutes=self.tolerance_minutes):
                         self.is_network_down = True
@@ -146,10 +150,7 @@ class NetworkMonitor:
                         })
                     else:
                         remaining_time = timedelta(minutes=self.tolerance_minutes) - time_since_success
-                        print(f"⏳ 网络异常但未超过容错时间，剩余{remaining_time.seconds//60}分钟")
-                else:
-                    # 首次失败，开始计时
-                    self.last_success_time = current_time - timedelta(minutes=self.tolerance_minutes)
+                        print(f"⏳ 网络异常但未超过容错时间，剩余{remaining_time.seconds}秒")
     
     def get_network_status(self) -> Dict:
         """获取当前网络状态"""
