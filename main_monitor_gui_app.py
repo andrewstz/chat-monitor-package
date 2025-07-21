@@ -454,10 +454,21 @@ class ChatMonitorGUI:
                     for result in results:
                         text = result['text']
                         if text and FUZZY_MATCHER:
+                            # 添加调试信息
+                            self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
+                            
                             first_line = text.splitlines()[0] if text else ""
+                            self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
+                            
+                            # 检查所有行文本
+                            all_lines = text.splitlines()
+                            self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
+                            
+                            # 检查第一行
                             match_result = FUZZY_MATCHER.match_sender(first_line)
                             if match_result:
                                 contact, sender, similarity = match_result
+                                self.safe_add_log_message(f"✅ 第一行匹配成功: {contact} (相似度: {similarity:.2f})")
                                 now = time.time()
                                 if now - self.last_reply_time > reply_wait:
                                     self.safe_add_detection_result(
@@ -475,6 +486,36 @@ class ChatMonitorGUI:
                                         self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
                                     self.last_reply_time = now
                                     break
+                            else:
+                                # 如果第一行没有匹配，检查所有行
+                                self.safe_add_log_message(f"❌ 第一行无匹配，检查所有行...")
+                                for i, line in enumerate(all_lines):
+                                    if line.strip():  # 跳过空行
+                                        match_result = FUZZY_MATCHER.match_sender(line.strip())
+                                        if match_result:
+                                            contact, sender, similarity = match_result
+                                            self.safe_add_log_message(f"✅ 第{i+1}行匹配成功: {contact} (相似度: {similarity:.2f})")
+                                            now = time.time()
+                                            if now - self.last_reply_time > reply_wait:
+                                                self.safe_add_detection_result(
+                                                    app_name, 
+                                                    f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
+                                                    result.get('confidence'),
+                                                    "YOLO+OCR"
+                                                )
+                                                # 添加声音播放调试信息
+                                                self.safe_add_log_message("🔊 播放联系提醒音...")
+                                                try:
+                                                    play_sound("contact")
+                                                    self.safe_add_log_message("✅ 声音播放完成")
+                                                except Exception as e:
+                                                    self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
+                                                self.last_reply_time = now
+                                                break
+                                        else:
+                                            self.safe_add_log_message(f"❌ 第{i+1}行无匹配: '{line.strip()}'")
+                                    if match_result:
+                                        break
                     
                     time.sleep(check_interval)
                     
@@ -596,9 +637,9 @@ class ChatMonitorGUI:
             settings_window.transient(self.root)  # 设置为主窗口的子窗口
             settings_window.grab_set()  # 模态窗口
             
-            # 设置窗口层级，确保显示在主窗口之上
-            settings_window.lift()  # 提升到顶层
-            settings_window.focus_set()  # 设置焦点
+            # 强制设置窗口层级，确保显示在主窗口之上
+            settings_window.lift(self.root)  # 提升到主窗口之上
+            settings_window.focus_force()  # 强制设置焦点
             settings_window.attributes('-topmost', True)  # 设置为最顶层
             
             # 居中显示
@@ -610,8 +651,9 @@ class ChatMonitorGUI:
             # 创建界面
             self.create_contacts_settings_ui(settings_window)
             
-            # 窗口创建完成后，取消topmost属性，但保持焦点
-            settings_window.after(100, lambda: settings_window.attributes('-topmost', False))
+            # 确保窗口保持在最顶层
+            settings_window.after(50, lambda: settings_window.lift(self.root))
+            settings_window.after(100, lambda: settings_window.focus_force())
             
         except Exception as e:
             self.safe_add_log_message(f"❌ 打开发信人设置失败: {str(e)}")

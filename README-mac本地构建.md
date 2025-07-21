@@ -2,6 +2,8 @@
 构建完后单独打安装包： repack_working_app.sh
 conda activate paddle
 打包过程无需用户输入y确认： --noconfirm 参数来自动确认："--noconfirm" 
+界面调试： chmod +x start_debug.sh
+
 
 # mac本地构建脚本去掉拷贝文件步骤，直接在当前项目中（已经是精简版）打包
 build_macos_app.sh （基于~/study/promgramLang/python/work/chat_monitor_ai/yolov5-popup-detector/build_macos_app_simple.sh修改的）

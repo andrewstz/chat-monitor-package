@@ -74,7 +74,6 @@ coverage.xml
 # ===== IDE 和编辑器 =====
 
 # VS Code
-.vscode/
 *.code-workspace
 
 # PyCharm

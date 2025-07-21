@@ -1,0 +1,76 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ChatMonitor 远程调试",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "${workspaceFolder}"
+                }
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "ChatMonitor 本地调试",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_monitor_dynamic.py",
+            "console": "integratedTerminal",
+            "env": {
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1"
+            },
+            "justMyCode": false
+        },
+        {
+            "name": "ChatMonitor GUI 本地调试",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_monitor_gui_app.py",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1"
+            },
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "ChatMonitor GUI 本地调试 (conda)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_monitor_gui_app.py",
+            "console": "integratedTerminal",
+            "python": "/Users/andrewstz/miniconda3/envs/paddle/bin/python3",
+            "env": {
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1",
+                "CONDA_DEFAULT_ENV": "paddle"
+            },
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "ChatMonitor GUI 本地调试 (conda run)",
+            "type": "python",
+            "request": "launch",
+            "module": "main_monitor_gui_app",
+            "console": "integratedTerminal",
+            "python": "/Users/andrewstz/miniconda3/envs/paddle/bin/python3",
+            "env": {
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1"
+            },
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+} 
