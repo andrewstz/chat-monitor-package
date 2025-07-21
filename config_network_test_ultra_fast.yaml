@@ -1,14 +1,13 @@
-# 支持YOLO模型的配置文件
-# 结合训练好的弹出框检测模型 + Tesseract OCR + BERT语义分析
+# 超快速网络监控测试配置文件
+# 使用小数分钟参数，获得更快的响应时间
 
 chat_app:
   name: "Mango"
-  # 【常规】 客户端项目-pic: xx24.jpeg
   target_contacts: ["js_wbmalia-研发部助理", "人事小姐姐"]
   fuzzy_match:
     enabled: true
-    similarity_threshold: 0.5  # 50%相似度阈值
-    min_length: 2  # 最小匹配长度
+    similarity_threshold: 0.5
+    min_length: 2
 
 monitor:
   check_interval: 3
@@ -17,9 +16,9 @@ monitor:
 # YOLO模型配置
 yolo:
   enabled: true
-  model_path: "models/best.pt"  # 使用训练好的模型
-  confidence: 0.35 # 检测置信度阈值（降低以提高检测率）
-  use_fallback: true  # 如果YOLO失败，使用全屏OCR备用方案
+  model_path: "models/best.pt"
+  confidence: 0.35
+  use_fallback: true
 
 ocr:
   tesseract:
@@ -66,10 +65,10 @@ preprocessing:
 
 debug:
   save_processed_images: false
-  save_detection_images: true  # 保存YOLO检测到的弹出框图像
+  save_detection_images: true
   verbose: true
 
-# 网络监控配置
+# ⚡ 超快速网络监控配置
 network_monitor:
   enabled: true
   check_interval: 3          # ⚡ 检测间隔：3秒
@@ -86,8 +85,8 @@ network_monitor:
 
 # 明确包含的功能
 included_features:
-  - "yolo_detection"  # YOLO弹出框检测
-  - "tesseract_ocr"   # Tesseract OCR
-  - "bert_semantic"   # BERT语义分析
-  - "network_monitor" # 网络监控
-  - "process_monitor" # 进程监控 
+  - "yolo_detection"
+  - "tesseract_ocr"
+  - "bert_semantic"
+  - "network_monitor"
+  - "process_monitor" 

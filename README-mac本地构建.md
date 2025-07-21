@@ -1,3 +1,5 @@
+# 重要
+构建完后单独打安装包： repack_working_app.sh
 conda activate paddle
 打包过程无需用户输入y确认： --noconfirm 参数来自动确认："--noconfirm" 
 
