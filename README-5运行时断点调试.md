@@ -262,3 +262,17 @@ configure_tesseract
 现在让我们也在 main_monitor_gui_app.py 中添加 tesseract 配置：
 现在让我们在 main 函数中调用 tesseract 配置：
 
+
+
+# 为啥程序一启动就自动关闭了呢
+我发现问题了！程序启动后显示的是加载窗口，然后应该切换到主窗口，但可能在切换过程中出现了问题。让我检查一下 ChatMonitorGUI 的初始化过程：
+我发现问题了！程序在 ChatMonitorGUI 初始化时自动启动了监控，但可能在监控过程中遇到了问题导致程序崩溃。让我修改代码，让程序启动时不自动开始监控，而是让用户手动点击"开始监控"按钮：
+现在让我们测试修改后的程序：
+conda activate paddle && python main_monitor_gui_app.py
+很好！现在程序启动后没有立即关闭了。让我们检查一下最新的日志，看看程序现在的状态：
+tail -20 /tmp/chatmonitor_debug.log
+很好！现在程序启动后没有立即关闭了。让我们检查一下最新的日志，看看程序现在的状态：
+
+
+
+

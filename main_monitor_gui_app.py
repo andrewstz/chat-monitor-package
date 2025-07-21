@@ -249,8 +249,8 @@ class ChatMonitorGUI:
         # 初始化配置
         self.init_monitoring()
         
-        # 启动监控
-        self.start_monitoring()
+        # 不自动启动监控，让用户手动点击开始
+        # self.start_monitoring()
     
     def init_monitoring(self):
         """初始化监控配置"""
@@ -382,18 +382,42 @@ class ChatMonitorGUI:
             ocr_psm = ocr_conf.get("config", "--psm 6").split()[-1]
             debug_verbose = conf.get("debug", {}).get("verbose", False)
             
+            # 检查权限
+            self.safe_add_log_message("检查系统权限...")
+            
+            # 检查屏幕录制权限
+            try:
+                test_img = screenshot()
+                if test_img is None:
+                    self.safe_add_log_message("⚠️ 屏幕录制权限不足，请在系统偏好设置中允许屏幕录制")
+                    self.safe_add_log_message("路径：系统偏好设置 > 安全性与隐私 > 隐私 > 屏幕录制")
+                    return
+                else:
+                    self.safe_add_log_message("✅ 屏幕录制权限正常")
+            except Exception as e:
+                self.safe_add_log_message(f"⚠️ 屏幕录制权限检查失败: {str(e)}")
+                return
+            
+            # 检查目标应用进程
+            if not check_process(app_name):
+                self.safe_add_log_message(f"⚠️ 未找到目标应用: {app_name}")
+                self.safe_add_log_message("请确保目标应用正在运行")
+                return
+            
+            self.safe_add_log_message(f"✅ 开始监控应用: {app_name}")
+            
             while self.monitoring:
                 try:
                     # 检查进程
                     if not check_process(app_name):
-                        self.add_log_message(f"未找到 {app_name} 进程")
+                        self.safe_add_log_message(f"未找到 {app_name} 进程")
                         time.sleep(check_interval)
                         continue
                     
                     # 截图
                     img = screenshot()
                     if img is None:
-                        self.add_log_message("截图失败")
+                        self.safe_add_log_message("截图失败")
                         time.sleep(check_interval)
                         continue
                     
@@ -404,7 +428,7 @@ class ChatMonitorGUI:
                     if self.yolo_manager and self.yolo_manager.initialized:
                         results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
                         if debug_verbose and results:
-                            self.add_log_message(f"检测到 {len(results)} 个弹窗")
+                            self.safe_add_log_message(f"检测到 {len(results)} 个弹窗")
                     
                     # 处理检测结果
                     for result in results:
@@ -416,24 +440,30 @@ class ChatMonitorGUI:
                                 contact, sender, similarity = match_result
                                 now = time.time()
                                 if now - self.last_reply_time > reply_wait:
-                                    self.add_detection_result(
+                                    self.safe_add_detection_result(
                                         app_name, 
                                         f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
                                         result.get('confidence'),
                                         "YOLO+OCR"
                                     )
-                                    play_sound("contact")
+                                    # 添加声音播放调试信息
+                                    self.safe_add_log_message("🔊 播放联系提醒音...")
+                                    try:
+                                        play_sound("contact")
+                                        self.safe_add_log_message("✅ 声音播放完成")
+                                    except Exception as e:
+                                        self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
                                     self.last_reply_time = now
                                     break
                     
                     time.sleep(check_interval)
                     
                 except Exception as e:
-                    self.add_log_message(f"监控循环错误: {str(e)}")
+                    self.safe_add_log_message(f"监控循环错误: {str(e)}")
                     time.sleep(check_interval)
                     
         except Exception as e:
-            self.add_log_message(f"监控器启动失败: {str(e)}")
+            self.safe_add_log_message(f"监控器启动失败: {str(e)}")
     
     def toggle_monitoring(self):
         """切换监控状态"""
@@ -488,6 +518,24 @@ class ChatMonitorGUI:
         log_text = f"[{timestamp}] {message}\n"
         self.text_area.insert("1.0", log_text)
         self.text_area.config(state=tk.DISABLED)
+    
+    def safe_add_log_message(self, message):
+        """线程安全的日志消息添加"""
+        try:
+            # 使用 after 方法在主线程中执行 GUI 更新
+            self.root.after(0, lambda: self.add_log_message(message))
+        except Exception as e:
+            # 如果 GUI 更新失败，至少记录到调试日志
+            debug_log(f"[GUI_ERROR] 日志更新失败: {str(e)}")
+    
+    def safe_add_detection_result(self, app_name, content, confidence=None, detection_method=None):
+        """线程安全的检测结果添加"""
+        try:
+            # 使用 after 方法在主线程中执行 GUI 更新
+            self.root.after(0, lambda: self.add_detection_result(app_name, content, confidence, detection_method))
+        except Exception as e:
+            # 如果 GUI 更新失败，至少记录到调试日志
+            debug_log(f"[GUI_ERROR] 检测结果更新失败: {str(e)}")
     
     def clear_logs(self):
         """清空检测记录"""

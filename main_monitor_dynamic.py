@@ -187,6 +187,8 @@ def play_sound(sound_type="default"):
     # 获取资源文件路径
     def get_resource_path(filename):
         """获取资源文件路径，支持打包后的路径"""
+        import sys
+        
         # 尝试多种可能的路径
         possible_paths = [
             filename,  # 当前目录
@@ -195,9 +197,28 @@ def play_sound(sound_type="default"):
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "sounds", filename),  # 绝对路径
         ]
         
+        # 如果是打包后的应用，尝试从 Resources 目录加载
+        if getattr(sys, 'frozen', False):
+            # PyInstaller 临时目录
+            if hasattr(sys, '_MEIPASS'):
+                meipass_sounds = os.path.join(sys._MEIPASS, "sounds", filename)
+                possible_paths.insert(0, meipass_sounds)
+                debug_log(f"[SOUND] 尝试_MEIPASS路径: {meipass_sounds}")
+            
+            # macOS .app Resources 目录
+            app_dir = os.path.dirname(sys.executable)
+            resources_sounds = os.path.join(app_dir, "..", "Resources", "sounds", filename)
+            possible_paths.insert(0, resources_sounds)
+            debug_log(f"[SOUND] 尝试Resources路径: {resources_sounds}")
+        
         for path in possible_paths:
-            if os.path.exists(path):
+            exists = os.path.exists(path)
+            debug_log(f"[SOUND] 检查音频文件: {path} - {'存在' if exists else '不存在'}")
+            if exists:
+                debug_log(f"[SOUND] ✅ 找到音频文件: {path}")
                 return path
+        
+        debug_log(f"[SOUND] ❌ 未找到音频文件: {filename}")
         return None
     
     # 根据提示音类型选择音频文件 - 优先使用真实录音
@@ -225,86 +246,64 @@ def play_sound(sound_type="default"):
     }
     
     try:
-        # 首先尝试播放真实录音文件
-        sound_file = sound_files[sound_type][system.lower()]
-        if sound_file and os.path.exists(sound_file):
-            if system == "Windows":
-                # Windows - 使用playsound库
-                try:
-                    from playsound import playsound
-                    playsound(sound_file, block=False)
+        # 尝试播放真实录音文件
+        sound_file_name = sound_files[sound_type][system.lower()]
+        if sound_file_name:
+            # 使用改进的路径解析
+            sound_file = get_resource_path(os.path.basename(sound_file_name))
+            if sound_file:
+                if system == "Windows":
+                    # Windows - 使用playsound库
+                    try:
+                        from playsound import playsound
+                        playsound(sound_file, block=False)
+                        debug_log(f"[SOUND] ✅ Windows playsound播放成功: {sound_file}")
+                        return
+                    except ImportError:
+                        # 备用方案：PowerShell
+                        subprocess.run(['powershell', '-c', f'(New-Object Media.SoundPlayer "{sound_file}").PlaySync()'], 
+                                     capture_output=True, check=True)
+                        debug_log(f"[SOUND] ✅ Windows PowerShell播放成功: {sound_file}")
+                        return
+                elif system == "Darwin":  # macOS
+                    # 只使用 afplay 播放指定音频文件
+                    try:
+                        debug_log(f"[SOUND] 尝试afplay播放: {sound_file}")
+                        result = subprocess.run(['afplay', sound_file], capture_output=True, text=True, timeout=5)
+                        if result.returncode == 0:
+                            debug_log(f"[SOUND] ✅ afplay播放成功: {sound_file}")
+                            return
+                        else:
+                            debug_log(f"[SOUND] ❌ afplay播放失败: {result.stderr}")
+                    except subprocess.TimeoutExpired:
+                        debug_log(f"[SOUND] ⚠️ afplay播放超时: {sound_file}")
+                    except Exception as e:
+                        debug_log(f"[SOUND] ❌ afplay播放异常: {str(e)}")
+                    
+                    # 如果 afplay 失败，记录错误但不使用系统提示音
+                    debug_log(f"[SOUND] ❌ 无法播放指定音频文件: {sound_file}")
                     return
-                except ImportError:
-                    # 备用方案：PowerShell
-                    subprocess.run(['powershell', '-c', f'(New-Object Media.SoundPlayer "{sound_file}").PlaySync()'], 
-                                 capture_output=True, check=True)
-                    return
-            elif system == "Darwin":  # macOS
-                subprocess.run(['afplay', sound_file], capture_output=True, check=True)
-                return
-            elif system == "Linux":
-                try:
-                    subprocess.run(['paplay', sound_file], capture_output=True, check=True)
-                except (subprocess.CalledProcessError, FileNotFoundError):
-                    subprocess.run(['aplay', sound_file], capture_output=True, check=True)
+                    
+                elif system == "Linux":
+                    try:
+                        subprocess.run(['paplay', sound_file], capture_output=True, check=True)
+                        debug_log(f"[SOUND] ✅ Linux paplay播放成功: {sound_file}")
+                        return
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        subprocess.run(['aplay', sound_file], capture_output=True, check=True)
+                        debug_log(f"[SOUND] ✅ Linux aplay播放成功: {sound_file}")
+                        return
+            else:
+                debug_log(f"[SOUND] ❌ 未找到音频文件: {sound_file_name}")
                 return
         
-        # 如果真实录音文件不存在，使用系统默认提示音
-        if system == "Windows":
-            # Windows系统蜂鸣器
-            import winsound
-            if sound_type == "contact":
-                winsound.Beep(800, 300)  # 较低频率，较短时间
-            elif sound_type == "error":
-                winsound.Beep(400, 500)  # 更低频率，较长时间
-            elif sound_type == "warning":
-                winsound.Beep(600, 400)  # 中等频率
-            else:
-                winsound.Beep(1000, 500)  # 默认
-                
-        elif system == "Darwin":  # macOS
-            # 使用终端铃声，不同次数区分类型
-            if sound_type == "contact":
-                print("\a\a")  # 两声
-            elif sound_type == "error":
-                print("\a\a\a")  # 三声
-            elif sound_type == "warning":
-                print("\a\a\a\a")  # 四声
-            else:
-                print("\a")  # 一声
-                
-        elif system == "Linux":
-            # 使用终端铃声
-            if sound_type == "contact":
-                print("\a\a")
-            elif sound_type == "error":
-                print("\a\a\a")
-            elif sound_type == "warning":
-                print("\a\a\a\a")
-            else:
-                print("\a")
-        else:
-            # 其他系统使用终端铃声
-            if sound_type == "contact":
-                print("\a\a")
-            elif sound_type == "error":
-                print("\a\a\a")
-            elif sound_type == "warning":
-                print("\a\a\a\a")
-            else:
-                print("\a")
+        # 如果没有找到音频文件，记录错误但不播放系统提示音
+        debug_log(f"[SOUND] ❌ 未找到音频文件配置: {sound_type}")
                 
     except Exception as e:
-        # 所有方法都失败时，使用终端铃声作为后备方案
-        print(f"音频播放失败: {e}")
-        if sound_type == "contact":
-            print("\a\a")
-        elif sound_type == "error":
-            print("\a\a\a")
-        elif sound_type == "warning":
-            print("\a\a\a\a")
-        else:
-            print("\a")
+        # 所有方法都失败时，记录错误但不播放系统提示音
+        debug_log(f"[SOUND] ❌ 音频播放失败: {e}")
+        return
 
 def check_process(app_name):
     for proc in psutil.process_iter(['name']):
