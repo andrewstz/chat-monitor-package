@@ -249,8 +249,20 @@ class ChatMonitorGUI:
         # 初始化配置
         self.init_monitoring()
         
-        # 不自动启动监控，让用户手动点击开始
-        # self.start_monitoring()
+        # 绑定窗口显示完成事件，确保 GUI 完全加载后再启动监控。 <Map> 事件绑定
+        self.root.bind('<Map>', self.on_window_ready)
+        # 如果窗口已经显示，直接启动
+        if self.root.winfo_viewable():
+            # 双重保障 如果窗口已经可见，延迟 100ms 启动
+            self.root.after(100, self.auto_start_monitoring)
+    
+    def on_window_ready(self, event):
+        """窗口显示完成事件回调"""
+        # 解绑事件，避免重复调用
+        self.root.unbind('<Map>')
+        # 延迟一小段时间确保 GUI 完全渲染
+        # 双重保障 如果窗口还未显示，等待 <Map> 事件后延迟 500ms 启动
+        self.root.after(500, self.auto_start_monitoring)
     
     def init_monitoring(self):
         """初始化监控配置"""
@@ -543,6 +555,27 @@ class ChatMonitorGUI:
         self.text_area.delete("1.0", tk.END)
         self.text_area.config(state=tk.DISABLED)
         self.status_label.config(text="状态: 记录已清空")
+    
+    def auto_start_monitoring(self):
+        """自动启动监控（确保 GUI 完全加载后执行）"""
+        try:
+            # 确保 GUI 完全更新
+            self.root.update_idletasks()
+            
+            self.safe_add_log_message("🔄 准备自动启动监控...")
+            debug_log("[AUTO_START] 开始自动启动监控")
+            
+            # 检查 GUI 是否完全加载
+            if not self.root.winfo_exists():
+                debug_log("[AUTO_START] 窗口不存在，取消自动启动")
+                return
+                
+            self.start_monitoring()
+            self.safe_add_log_message("✅ 监控已自动启动")
+            debug_log("[AUTO_START] 监控自动启动成功")
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 自动启动监控失败: {str(e)}")
+            debug_log(f"[AUTO_START] 自动启动监控失败: {str(e)}")
     
     def close_program(self):
         """关闭程序"""

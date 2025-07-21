@@ -47,3 +47,36 @@ cp -r models release/ChatMonitor.app/Contents/Resources/
 ls -la release/ChatMonitor.app/Contents/Resources/models/
 4. 修改构建脚本，自动包含模型文件 build_macos_app.sh
 cp -r models "$RESOURCES_DIR/"
+
+
+
+# after(2000是延迟2秒吗？这能保证gui一定加载完了吗？gui加载成功没有回调方法或事件通知吗
+在 tkinter 中，我们可以使用 update_idletasks() 和事件绑定来确保 GUI 完全加载：
+完美！�� 应用程序构建成功了。现在让我解释一下改进的自动启动机制：
+🔧 改进的自动启动机制：
+事件驱动的启动：
+    使用 <Map> 事件绑定，当窗口显示完成时触发
+    比固定延迟更可靠，确保 GUI 完全加载
+双重保障：
+    如果窗口已经可见，延迟 100ms 启动
+    如果窗口还未显示，等待 <Map> 事件后延迟 500ms 启动
+安全检查：
+    使用 update_idletasks() 确保 GUI 完全更新
+    检查窗口是否存在，避免在窗口关闭时启动监控
+详细日志：
+    记录自动启动的每个步骤
+    便于调试和问题排查
+📋 现在的启动流程：
+    程序启动 → 显示加载窗口
+    GUI 初始化 → 创建主窗口
+    窗口显示完成 → 触发 <Map> 事件
+    延迟 500ms → 确保 GUI 完全渲染
+    自动启动监控 → 开始检测弹窗
+�� 优势：
+✅ 不会崩溃：等待 GUI 完全加载后再启动监控
+✅ 事件驱动：使用 tkinter 事件系统，比固定延迟更可靠
+✅ 用户友好：程序启动后自动开始工作，无需手动点击
+✅ 错误处理：如果启动失败，会记录详细错误信息
+
+
+
