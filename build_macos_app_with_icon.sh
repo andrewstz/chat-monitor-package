@@ -43,13 +43,10 @@ done
 echo "🎨 检查图标文件..."
 ICON_FILE=""
 ICON_CANDIDATES=(
-    "assets/icons/icon.icns"
     "assets/icons/icon.png"
-    "assets/icon.icns"
+    "assets/icons/icon_256x256.png"
     "assets/icon.png"
-    "icons/icon.icns"
     "icons/icon.png"
-    "icon.icns"
     "icon.png"
 )
 
@@ -187,7 +184,7 @@ if [ -f "dist/ChatMonitor/ChatMonitor" ]; then
     
     # 复制图标文件到 Resources 目录
     if [ -n "$ICON_FILE" ]; then
-        cp "$ICON_FILE" "$RESOURCES_DIR/icon.icns"
+        cp "$ICON_FILE" "$RESOURCES_DIR/icon.png"
         echo "  ✅ 复制图标到 Resources: $ICON_FILE"
     fi
     
@@ -239,6 +236,8 @@ if [ -f "dist/ChatMonitor/ChatMonitor" ]; then
     <string>NSApplication</string>
     <key>LSMultipleInstancesProhibited</key>
     <true/>
+    <key>CFBundleIconFile</key>
+    <string>icon.png</string>
 </dict>
 </plist>
 EOF

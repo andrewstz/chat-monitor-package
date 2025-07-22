@@ -316,7 +316,17 @@ build_with_icon.py (Python 脚本)
 build_macos_app.sh: 完整的生产级打包
 build_with_icon.py: 简化的图标专用打包
 �� 建议整合
-让我创建一个整合版本，结合两者的优点：
+让我创建一个整合版本，结合两者的优点： chmod +x build_macos_app_with_icon.sh
 
 
+
+
+# 为何安装release/ChatMonitor-macOS-working-v1.0.0.dmg里面的app打开后默认没有启动监控？而且图标也没有显示在应用上
+。。。
+1、我原逻辑代码里有绑定窗口就绪事件329行，为啥上面又搞一次？2、我不用icon.icns图标，只要用png图标。
+你说得对！我看到原来的代码在第329行已经有绑定窗口就绪事件的逻辑了。让我撤销刚才的重复添加：
+现在修复图标问题，只使用 PNG 图标： 去掉了.icns
+。。。
+2、没有默认启动监控。
+尝试设置图标 for icon_path in icon_paths:。。。 return 改为 break，否则影响后面的gui窗口启动后绑定事件 self.root.bind('<Map>', self.on_window_ready)，从而不去启动监控
 

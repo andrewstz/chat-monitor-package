@@ -305,12 +305,12 @@ class ChatMonitorGUI:
                             # 强制刷新窗口
                             self.root.update_idletasks()
                             debug_log(f"[ICON] 成功设置图标 (iconphoto): {icon_path}")
-                            return
+                            break
                         else:
                             # 方法2: 使用 iconbitmap (适用于 .icns 文件)
                             self.root.iconbitmap(icon_path)
                             debug_log(f"[ICON] 成功设置图标 (iconbitmap): {icon_path}")
-                            return
+                            break
                     except Exception as e:
                         debug_log(f"[ICON] 设置图标失败 {icon_path}: {str(e)}")
                         continue
@@ -322,19 +322,28 @@ class ChatMonitorGUI:
             debug_log(f"[ICON] 设置图标失败: {str(e)}")
             # 图标设置失败不影响程序运行
         
+        # 无论图标设置是否成功，都要绑定窗口事件
+        debug_log("[ICON] 开始绑定窗口事件")
+        
         # 绑定窗口显示完成事件，确保 GUI 完全加载后再启动监控。 <Map> 事件绑定
+        debug_log("[ICON] 绑定窗口显示事件")
         self.root.bind('<Map>', self.on_window_ready)
         # 如果窗口已经显示，直接启动
         if self.root.winfo_viewable():
+            debug_log("[ICON] 窗口已可见，延迟100ms启动监控")
             # 双重保障 如果窗口已经可见，延迟 100ms 启动
             self.root.after(100, self.auto_start_monitoring)
+        else:
+            debug_log("[ICON] 窗口未可见，等待Map事件")
     
     def on_window_ready(self, event):
         """窗口显示完成事件回调"""
+        debug_log("[WINDOW_READY] 窗口显示完成事件触发")
         # 解绑事件，避免重复调用
         self.root.unbind('<Map>')
         # 延迟一小段时间确保 GUI 完全渲染
         # 双重保障 如果窗口还未显示，等待 <Map> 事件后延迟 500ms 启动
+        debug_log("[WINDOW_READY] 延迟500ms启动监控")
         self.root.after(500, self.auto_start_monitoring)
     
     def init_monitoring(self):
