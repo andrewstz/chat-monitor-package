@@ -1,100 +1,83 @@
-# 支持YOLO模型的配置文件
-# 结合训练好的弹出框检测模型 + Tesseract OCR + BERT语义分析
-
 chat_app:
-  name: "Mango"
-  # 【常规】 客户端项目-pic: xx24.jpeg
-  # target_contacts: ["js_wbmalia-研发部助理", "人事小姐姐"]
-  target_contacts:
-    - js_wbmalia-研发部助理
-    - 人事小姐姐
   fuzzy_match:
     enabled: true
-    similarity_threshold: 0.5  # 50%相似度阈值
-    min_length: 2  # 最小匹配长度
-
+    min_length: 2
+    similarity_threshold: 0.5
+  name: Mango
+  target_contacts:
+  - 客户端设置
+  - js_wbmalia-研发部助理
+  - 人事小姐姐
+debug:
+  save_detection_images: true
+  save_processed_images: false
+  verbose: true
+included_features:
+- yolo_detection
+- tesseract_ocr
+- bert_semantic
+- network_monitor
+- process_monitor
 monitor:
   check_interval: 3
   reply_wait: 60
-
-# YOLO模型配置
-yolo:
+network_monitor:
+  check_interval: 60
+  consecutive_failures: 6
   enabled: true
-  model_path: "models/best.pt"  # 使用训练好的模型
-  confidence: 0.8 # 检测置信度阈值（降低以提高检测率）
-  use_fallback: true  # 如果YOLO失败，使用全屏OCR备用方案
-
+  test_targets:
+  - method: http
+    name: 谷歌
+    url: https://www.google.com
+  - method: http
+    name: GitHub
+    url: https://github.com
+  timeout: 10
+  tolerance_minutes: 0.5
 ocr:
   tesseract:
-    lang: "chi_sim+eng"
-    config: "--psm 6"
+    config: --psm 6
+    lang: chi_sim+eng
     use_preprocessing: true
   text_correction:
-    enabled: true
     char_corrections:
-      "儆": "警"
-      "千": "干"
-      "千": "于"
-      "儆": "惊"
-      "0": "O"
-      "1": "l"
-      "5": "S"
-      "8": "B"
+      '0': O
+      '1': l
+      '5': S
+      '8': B
+      儆: 惊
+      千: 于
+    enabled: true
     phrase_corrections:
-      "回复1": "回复1"
-      "发送照片": "发送照片"
-      "收到": "收到"
-      "好的": "好的"
-      "谢谢": "谢谢"
-      "再见": "再见"
-
-semantic:
-  model_name: "hfl/chinese-bert-wwm-ext"
-  enabled: true
-  confidence_threshold: 0.65
-
+      再见: 再见
+      发送照片: 发送照片
+      回复1: 回复1
+      好的: 好的
+      收到: 收到
+      谢谢: 谢谢
 preprocessing:
   clahe:
     clip_limit: 2.0
-    tile_grid_size: [8, 8]
+    tile_grid_size:
+    - 8
+    - 8
   denoising:
     enabled: true
-    method: "fastNlMeansDenoising"
-  threshold:
-    method: "OTSU"
+    method: fastNlMeansDenoising
   morphology:
     enabled: true
-    operation: "CLOSE"
-    kernel_size: [1, 1]
-
-debug:
-  save_processed_images: false
-  save_detection_images: true  # 保存YOLO检测到的弹出框图像
-  verbose: true
-
-# 网络监控配置
-network_monitor:
+    kernel_size:
+    - 1
+    - 1
+    operation: CLOSE
+  threshold:
+    method: OTSU
+semantic:
+  confidence_threshold: 0.65
   enabled: true
-  check_interval: 60          # 检测间隔（秒）
-  timeout: 10                 # 超时时间（秒）
-  consecutive_failures: 6     # 连续失败次数阈值
-  tolerance_minutes: 0.5       # 容错时间（分钟）
-  # check_interval: 3          # ⚡ 检测间隔：3秒
-  # timeout: 2                 # ⚡ 超时时间：2秒
-  # consecutive_failures: 2    # ⚡ 连续失败阈值：1次
-  # tolerance_minutes: 0.002     # ⚡ 容错时间：0.05分钟 = 3秒
-  test_targets:              # 检测目标
-    - name: "谷歌"
-      url: "https://www.google.com"
-      method: "http"
-    - name: "GitHub"
-      url: "https://github.com"
-      method: "http"
-
-# 明确包含的功能
-included_features:
-  - "yolo_detection"  # YOLO弹出框检测
-  - "tesseract_ocr"   # Tesseract OCR
-  - "bert_semantic"   # BERT语义分析
-  - "network_monitor" # 网络监控
-  - "process_monitor" # 进程监控 
+  model_name: hfl/chinese-bert-wwm-ext
+yolo:
+  confidence: 0.8
+  enabled: true
+  model_path: models/best.pt
+  use_fallback: true

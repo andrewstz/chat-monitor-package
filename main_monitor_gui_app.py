@@ -161,8 +161,8 @@ class ChatMonitorGUI:
         self.root.geometry("500x600")
         self.root.resizable(True, True)
         
-        # 设置窗口图标（可选）
-        # self.root.iconbitmap('icon.icns')
+        # 设置窗口图标
+        self.set_window_icon()
         
         # 创建主框架
         self.main_frame = ttk.Frame(root, padding="10")
@@ -255,6 +255,68 @@ class ChatMonitorGUI:
         
         # 初始化配置
         self.init_monitoring()
+    
+    def set_window_icon(self):
+        """设置窗口图标"""
+        try:
+            # 尝试多种图标路径（优先 PNG 格式）
+            icon_paths = [
+                "icon.png",  # 当前目录 PNG
+                "icon_256x256.png",  # 高分辨率 PNG
+                "icon.icns",  # 当前目录 ICNS
+                "assets/icon.png",  # assets目录 PNG
+                "assets/icon.icns",  # assets目录 ICNS
+                "icons/icon.png",  # icons目录 PNG
+                "icons/icon.icns",  # icons目录 ICNS
+                os.path.join(os.path.dirname(__file__), "icon.png"),
+                os.path.join(os.path.dirname(__file__), "icon.icns"),
+                os.path.join(os.path.dirname(__file__), "assets", "icon.png"),
+                os.path.join(os.path.dirname(__file__), "assets", "icon.icns"),
+                os.path.join(os.path.dirname(__file__), "icons", "icon.png"),
+                os.path.join(os.path.dirname(__file__), "icons", "icon.icns"),
+            ]
+            
+            # 如果是打包后的应用，尝试从Resources目录加载
+            if getattr(sys, 'frozen', False):
+                # PyInstaller 临时目录
+                if hasattr(sys, '_MEIPASS'):
+                    meipass_icon = os.path.join(sys._MEIPASS, "icon.icns")
+                    icon_paths.insert(0, meipass_icon)
+                
+                # macOS .app Resources 目录
+                app_dir = os.path.dirname(sys.executable)
+                resources_icon = os.path.join(app_dir, "..", "Resources", "icon.icns")
+                icon_paths.insert(0, resources_icon)
+            
+            # 尝试设置图标
+            for icon_path in icon_paths:
+                if os.path.exists(icon_path):
+                    try:
+                        # 方法1: 使用 iconphoto (适用于 PNG 文件，在 macOS 上效果更好)
+                        if icon_path.lower().endswith('.png'):
+                            from PIL import Image, ImageTk
+                            img = Image.open(icon_path)
+                            photo = ImageTk.PhotoImage(img)
+                            self.root.iconphoto(True, photo)
+                            # 强制刷新窗口
+                            self.root.update_idletasks()
+                            debug_log(f"[ICON] 成功设置图标 (iconphoto): {icon_path}")
+                            return
+                        else:
+                            # 方法2: 使用 iconbitmap (适用于 .icns 文件)
+                            self.root.iconbitmap(icon_path)
+                            debug_log(f"[ICON] 成功设置图标 (iconbitmap): {icon_path}")
+                            return
+                    except Exception as e:
+                        debug_log(f"[ICON] 设置图标失败 {icon_path}: {str(e)}")
+                        continue
+            
+            # 如果没有找到图标文件，尝试使用系统默认图标
+            debug_log("[ICON] 未找到图标文件，使用系统默认图标")
+            
+        except Exception as e:
+            debug_log(f"[ICON] 设置图标失败: {str(e)}")
+            # 图标设置失败不影响程序运行
         
         # 绑定窗口显示完成事件，确保 GUI 完全加载后再启动监控。 <Map> 事件绑定
         self.root.bind('<Map>', self.on_window_ready)
