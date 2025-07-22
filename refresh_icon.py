@@ -25,9 +25,9 @@ def refresh_icon():
     
     # 3. 确保使用最新图标
     print("  📁 更新图标文件...")
-    if os.path.exists("icon_256x256.png"):
-        subprocess.run(["cp", "icon_256x256.png", "icon.png"])
-        print("    ✅ 已复制最新图标到 icon.png")
+    if os.path.exists("assets/icons/icon_256x256.png"):
+        subprocess.run(["cp", "assets/icons/icon_256x256.png", "assets/icons/icon.png"])
+        print("    ✅ 已复制最新图标到 assets/icons/icon.png")
     
     # 4. 清空调试日志
     print("  📝 清空调试日志...")

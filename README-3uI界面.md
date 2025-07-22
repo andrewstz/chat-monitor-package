@@ -292,3 +292,4 @@ sleep 5 && grep -i icon /tmp/chatmonitor_debug.log
 8. 创建一个图标刷新脚本
 refresh_icon.py
 
+ASSETS_STRUCTURE.md

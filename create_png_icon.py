@@ -39,18 +39,18 @@ def create_png_icon():
         
         draw.text((x, y), text, fill=(255, 255, 255, 255), font=font)
         
-        # 保存图标
-        icon_path = f"icon_{size}x{size}.png"
+        # 保存图标到 assets/icons 目录
+        icon_path = f"assets/icons/icon_{size}x{size}.png"
         img.save(icon_path)
         print(f"  ✅ 创建 {size}x{size} PNG 图标: {icon_path}")
     
     # 创建默认图标（使用最大尺寸）
-    default_icon = f"icon_{sizes[-1]}x{sizes[-1]}.png"
+    default_icon = f"assets/icons/icon_{sizes[-1]}x{sizes[-1]}.png"
     if os.path.exists(default_icon):
         # 复制为默认图标名
         import shutil
-        shutil.copy2(default_icon, "icon.png")
-        print(f"  ✅ 创建默认图标: icon.png")
+        shutil.copy2(default_icon, "assets/icons/icon.png")
+        print(f"  ✅ 创建默认图标: assets/icons/icon.png")
     
     print("✅ PNG 图标创建完成！")
 

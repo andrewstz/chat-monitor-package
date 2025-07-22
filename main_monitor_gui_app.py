@@ -259,21 +259,25 @@ class ChatMonitorGUI:
     def set_window_icon(self):
         """设置窗口图标"""
         try:
-            # 尝试多种图标路径（优先 PNG 格式）
+            # 尝试多种图标路径（优先 assets 目录）
             icon_paths = [
-                "icon.png",  # 当前目录 PNG
-                "icon_256x256.png",  # 高分辨率 PNG
-                "icon.icns",  # 当前目录 ICNS
-                "assets/icon.png",  # assets目录 PNG
-                "assets/icon.icns",  # assets目录 ICNS
-                "icons/icon.png",  # icons目录 PNG
-                "icons/icon.icns",  # icons目录 ICNS
-                os.path.join(os.path.dirname(__file__), "icon.png"),
-                os.path.join(os.path.dirname(__file__), "icon.icns"),
+                "assets/icons/icon.png",  # assets/icons 目录 PNG
+                "assets/icons/icon_256x256.png",  # 高分辨率 PNG
+                "assets/icons/icon.icns",  # assets/icons 目录 ICNS
+                "assets/icon.png",  # assets 目录 PNG
+                "assets/icon.icns",  # assets 目录 ICNS
+                "icons/icon.png",  # icons 目录 PNG
+                "icons/icon.icns",  # icons 目录 ICNS
+                "icon.png",  # 当前目录 PNG（兼容性）
+                "icon.icns",  # 当前目录 ICNS（兼容性）
+                os.path.join(os.path.dirname(__file__), "assets", "icons", "icon.png"),
+                os.path.join(os.path.dirname(__file__), "assets", "icons", "icon.icns"),
                 os.path.join(os.path.dirname(__file__), "assets", "icon.png"),
                 os.path.join(os.path.dirname(__file__), "assets", "icon.icns"),
                 os.path.join(os.path.dirname(__file__), "icons", "icon.png"),
                 os.path.join(os.path.dirname(__file__), "icons", "icon.icns"),
+                os.path.join(os.path.dirname(__file__), "icon.png"),
+                os.path.join(os.path.dirname(__file__), "icon.icns"),
             ]
             
             # 如果是打包后的应用，尝试从Resources目录加载
