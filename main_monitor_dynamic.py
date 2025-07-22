@@ -491,20 +491,29 @@ def main():
     print("✅ 动态配置监控已启动，修改 config_with_yolo.yaml 可实时生效")
     print(f"🕐 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    conf = get_config()
-    app_name = conf.get("chat_app", {}).get("name", "WeChat")
-    yolo_conf = conf.get("yolo", {})
-    ocr_conf = conf.get("ocr", {}).get("tesseract", {})
-    yolo_enabled = yolo_conf.get("enabled", True) and YOLO_AVAILABLE
-    yolo_model_path = yolo_conf.get("model_path", "runs/detect/train/weights/best.pt")
-    yolo_confidence = yolo_conf.get("confidence", 0.35)
-    ocr_lang = ocr_conf.get("lang", "chi_sim+eng")
-    ocr_psm = ocr_conf.get("config", "--psm 6").split()[-1]
-    check_interval = conf.get("monitor", {}).get("check_interval", 3)
-    reply_wait = conf.get("monitor", {}).get("reply_wait", 60)
+    # 使用统一的配置管理
+    from config_manager import get_config_manager
+    config_manager = get_config_manager()
+    
+    yolo_config = config_manager.get_yolo_config()
+    ocr_config = config_manager.get_ocr_config()
+    monitor_config = config_manager.get_monitor_config()
+    debug_config = config_manager.get_debug_config()
+    chat_config = config_manager.get_chat_app_config()
+    network_config = config_manager.get_network_config()
+    
+    app_name = chat_config["name"]
+    yolo_enabled = yolo_config["enabled"] and YOLO_AVAILABLE
+    yolo_model_path = yolo_config["model_path"]
+    yolo_confidence = yolo_config["confidence"]
+    ocr_lang = ocr_config["lang"]
+    ocr_psm = ocr_config["psm"]
+    check_interval = monitor_config["check_interval"]
+    reply_wait = monitor_config["reply_wait"]
+    debug_verbose = debug_config["verbose"]
+    
     yolo_manager = YOLOModelManager(yolo_model_path, yolo_confidence) if yolo_enabled else None
     last_reply_time = 0
-    debug_verbose = conf.get("debug", {}).get("verbose", False)
     
     # 打印初始配置
     print(f"🎯 目标应用: {app_name}")
@@ -519,11 +528,10 @@ def main():
     print("-" * 50)
 
     # 初始化网络监控
-    network_conf = conf.get("network_monitor", {})
-    network_enabled = network_conf.get("enabled", True)
+    network_enabled = network_config["enabled"]
     if network_enabled:
-        consecutive_failures = network_conf.get("consecutive_failures", 3)
-        tolerance_minutes = network_conf.get("tolerance_minutes", 1)
+        consecutive_failures = network_config["consecutive_failures"]
+        tolerance_minutes = network_config["tolerance_minutes"]
         print(f"🌐 网络监控已启用 - 连续失败阈值: {consecutive_failures}, 容错时间: {tolerance_minutes}分钟")
 
     detection_count = 0
@@ -532,10 +540,14 @@ def main():
     while True:
         try:
             current_time = time.time()
-            conf = get_config()
-            app_name = conf.get("chat_app", {}).get("name", "WeChat")
-            check_interval = conf.get("monitor", {}).get("check_interval", 30)
-            reply_wait = conf.get("monitor", {}).get("reply_wait", 60)
+            # 在循环中重新获取配置（支持热更新）
+            yolo_config = get_yolo_config()
+            monitor_config = get_monitor_config()
+            chat_config = get_chat_app_config()
+            
+            app_name = chat_config["name"]
+            check_interval = monitor_config["check_interval"]
+            reply_wait = monitor_config["reply_wait"]
 
             # 检查进程
             if not check_process(app_name):

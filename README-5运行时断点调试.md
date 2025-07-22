@@ -276,3 +276,20 @@ tail -20 /tmp/chatmonitor_debug.log
 
 
 
+# 这些断点怎么都没有触发？保存设置相关的save_contacts_from_text、save_contacts里面打断点也没有触发
+好的，环境变量没有设置，所以程序不会卡在远程调试。让我创建一个简化的调试版本来避免复杂的初始化：
+。。。
+ChatMonitor GUI 调试 (禁用YOLO)
+这个可以
+
+## [‼️][‼️]为什么要禁用YOLO才可以走到后续断点？YOLO加载什么报错了吗？
+其实是因为走到断点时，YOLO加载走到main_monitor_dynamic.py的这一句了：
+import pdb; pdb.set_trace()
+这就会进入pdb调试器，要在控制台输入特定字符才会继续往下走（ 看上面 c ）
+
+
+
+
+
+
+

@@ -596,3 +596,30 @@ cp test_model_path.py dist/ChatMonitor.app/Contents/Resources/
 cd dist/ChatMonitor.app/Contents/MacOS && ./ChatMonitor test_model_path.py
 
 
+
+
+# 为什么main_monitor_gui_app.py、main_monitor_dynamic.py都有yolo_conf.get("confidence"这样获取相同配置的语句？它们两是独立的程序吗？
+1. 不是独立的程序，而是同一个程序的不同版本
+main_monitor_dynamic.py: 命令行版本，直接运行监控逻辑
+main_monitor_gui_app.py: GUI版本，导入并使用 main_monitor_dynamic.py 的功能
+导入原有的监控模块
+from main_monitor_dynamic import (
+    get_config, play_sound, check_process, screenshot, 
+    detect_and_ocr_with_yolo, YOLOModelManager, TARGET_CONTACTS, FUZZY_MATCHER,
+    config_manager
+)
+2. 配置重复获取的问题
+你发现了一个重要问题！两个文件都在重复获取相同的配置：
+3. 问题分析
+重复代码: 两个文件都在获取相同的YOLO配置
+默认值不一致:
+main_monitor_dynamic.py: "runs/detect/train/weights/best.pt"
+main_monitor_gui_app.py: "models/best.pt"
+逻辑重复: 两个文件都有YOLO初始化逻辑
+解决方案
+让我重构代码，消除重复并统一配置管理：
+现在让我创建一个统一的配置管理函数： config_manager.py
+
+
+
+

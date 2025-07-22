@@ -3,8 +3,14 @@ import yaml
 import time
 import threading
 from typing import Dict, Any, Callable
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+    WATCHDOG_AVAILABLE = True
+except ImportError:
+    WATCHDOG_AVAILABLE = False
+    print("⚠️  watchdog未安装，文件监控功能不可用")
 
 class ConfigManager:
     """配置管理器，支持热更新"""
@@ -91,6 +97,9 @@ class ConfigManager:
 
     def start_watching(self):
         """启动文件监控"""
+        if not WATCHDOG_AVAILABLE:
+            print("⚠️  watchdog不可用，跳过文件监控")
+            return
         if self.is_watching:
             return
         try:
@@ -111,20 +120,85 @@ class ConfigManager:
             self.is_watching = False
             print("✅ 已停止文件监控")
 
-class ConfigFileHandler(FileSystemEventHandler):
-    """配置文件变更处理器"""
-    def __init__(self, config_manager: ConfigManager):
-        self.config_manager = config_manager
-        self.last_modified = 0
-    def on_modified(self, event):
-        if not event.is_directory and os.path.abspath(event.src_path) == os.path.abspath(self.config_manager.config_path):
-            # 避免重复触发
-            current_time = time.time()
-            if current_time - self.last_modified > 1:  # 1秒内只触发一次
-                self.last_modified = current_time
-                print(f"🔄 检测到配置文件变更: {event.src_path}")
-                # 延迟加载，确保文件写入完成
-                threading.Timer(0.5, self.config_manager.load_config).start()
+    # 便捷配置获取方法
+    def get_yolo_config(self) -> Dict[str, Any]:
+        """获取YOLO配置"""
+        yolo_conf = self.get_config("yolo", {})
+        
+        # 检查是否禁用YOLO
+        disable_yolo = os.environ.get('CHATMONITOR_DISABLE_YOLO') == '1'
+        
+        config = {
+            "enabled": False if disable_yolo else yolo_conf.get("enabled", True),
+            "model_path": yolo_conf.get("model_path", "models/best.pt"),
+            "confidence": yolo_conf.get("confidence", 0.35),
+            "disable_reason": "环境变量禁用" if disable_yolo else None
+        }
+        
+        return config
+
+    def get_ocr_config(self) -> Dict[str, Any]:
+        """获取OCR配置"""
+        ocr_conf = self.get_config("ocr.tesseract", {})
+        
+        return {
+            "lang": ocr_conf.get("lang", "chi_sim+eng"),
+            "psm": ocr_conf.get("config", "--psm 6").split()[-1]
+        }
+
+    def get_monitor_config(self) -> Dict[str, Any]:
+        """获取监控配置"""
+        monitor_conf = self.get_config("monitor", {})
+        
+        return {
+            "check_interval": monitor_conf.get("check_interval", 3),
+            "reply_wait": monitor_conf.get("reply_wait", 60)
+        }
+
+    def get_debug_config(self) -> Dict[str, Any]:
+        """获取调试配置"""
+        debug_conf = self.get_config("debug", {})
+        
+        return {
+            "verbose": debug_conf.get("verbose", False),
+            "debug_log": os.environ.get('CHATMONITOR_DEBUG') == '1',
+            "remote_debug": os.environ.get('CHATMONITOR_REMOTE_DEBUG') == '1'
+        }
+
+    def get_chat_app_config(self) -> Dict[str, Any]:
+        """获取聊天应用配置"""
+        chat_conf = self.get_config("chat_app", {})
+        
+        return {
+            "name": chat_conf.get("name", "WeChat"),
+            "target_contacts": chat_conf.get("target_contacts", [])
+        }
+
+    def get_network_config(self) -> Dict[str, Any]:
+        """获取网络监控配置"""
+        network_conf = self.get_config("network_monitor", {})
+        
+        return {
+            "enabled": network_conf.get("enabled", True),
+            "consecutive_failures": network_conf.get("consecutive_failures", 3),
+            "tolerance_minutes": network_conf.get("tolerance_minutes", 1)
+        }
+
+if WATCHDOG_AVAILABLE:
+    class ConfigFileHandler(FileSystemEventHandler):
+        """配置文件变更处理器"""
+        def __init__(self, config_manager: ConfigManager):
+            self.config_manager = config_manager
+            self.last_modified = 0
+        def on_modified(self, event):
+            if not event.is_directory and os.path.abspath(event.src_path) == os.path.abspath(self.config_manager.config_path):
+                # 避免重复触发
+                current_time = time.time()
+                if current_time - self.last_modified > 1:  # 1秒内只触发一次
+                    self.last_modified = current_time
+                    print(f"🔄 检测到配置文件变更: {event.src_path}")
+                    # 延迟加载，确保文件写入完成
+                    threading.Timer(0.5, self.config_manager.load_config).start()
 
 # 全局配置管理器实例
 config_manager = None

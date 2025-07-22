@@ -276,13 +276,19 @@ class ChatMonitorGUI:
         """初始化监控配置"""
         debug_log("[INIT] 开始初始化监控配置")
         try:
-            conf = get_config()
-            yolo_conf = conf.get("yolo", {})
-            yolo_enabled = yolo_conf.get("enabled", True)
-            yolo_model_path = yolo_conf.get("model_path", "models/best.pt")
-            yolo_confidence = yolo_conf.get("confidence", 0.35)
+            # 使用统一的配置管理
+            from config_manager import get_config_manager
+            config_manager = get_config_manager()
+            yolo_config = config_manager.get_yolo_config()
+            
+            yolo_enabled = yolo_config["enabled"]
+            yolo_model_path = yolo_config["model_path"]
+            yolo_confidence = yolo_config["confidence"]
+            disable_reason = yolo_config["disable_reason"]
             
             debug_log(f"[INIT] YOLO配置: enabled={yolo_enabled}, model_path={yolo_model_path}, confidence={yolo_confidence}")
+            if disable_reason:
+                debug_log(f"[INIT] YOLO禁用原因: {disable_reason}")
             
             self.add_log_message(f"YOLO配置: enabled={yolo_enabled}, path={yolo_model_path}")
             
@@ -486,36 +492,6 @@ class ChatMonitorGUI:
                                         self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
                                     self.last_reply_time = now
                                     break
-                            else:
-                                # 如果第一行没有匹配，检查所有行
-                                self.safe_add_log_message(f"❌ 第一行无匹配，检查所有行...")
-                                for i, line in enumerate(all_lines):
-                                    if line.strip():  # 跳过空行
-                                        match_result = FUZZY_MATCHER.match_sender(line.strip())
-                                        if match_result:
-                                            contact, sender, similarity = match_result
-                                            self.safe_add_log_message(f"✅ 第{i+1}行匹配成功: {contact} (相似度: {similarity:.2f})")
-                                            now = time.time()
-                                            if now - self.last_reply_time > reply_wait:
-                                                self.safe_add_detection_result(
-                                                    app_name, 
-                                                    f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
-                                                    result.get('confidence'),
-                                                    "YOLO+OCR"
-                                                )
-                                                # 添加声音播放调试信息
-                                                self.safe_add_log_message("🔊 播放联系提醒音...")
-                                                try:
-                                                    play_sound("contact")
-                                                    self.safe_add_log_message("✅ 声音播放完成")
-                                                except Exception as e:
-                                                    self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
-                                                self.last_reply_time = now
-                                                break
-                                        else:
-                                            self.safe_add_log_message(f"❌ 第{i+1}行无匹配: '{line.strip()}'")
-                                    if match_result:
-                                        break
                     
                     time.sleep(check_interval)
                     

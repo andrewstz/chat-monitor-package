@@ -71,6 +71,41 @@
             },
             "justMyCode": false,
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "ChatMonitor GUI 调试 (禁用YOLO)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_monitor_gui_app.py",
+            "console": "integratedTerminal",
+            "python": "/Users/andrewstz/miniconda3/envs/paddle/bin/python3",
+            "env": {
+                "CHATMONITOR_DISABLE_YOLO": "1",
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1",
+                "CONDA_DEFAULT_ENV": "paddle"
+            },
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "args": []
+        },
+        {
+            "name": "纯GUI调试 (debug_gui_only.py)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/debug_gui_only.py",
+            "console": "integratedTerminal",
+            "python": "/Users/andrewstz/miniconda3/envs/paddle/bin/python3",
+            "env": {
+                "CHATMONITOR_DEBUG": "1",
+                "CHATMONITOR_VERBOSE": "1",
+                "CONDA_DEFAULT_ENV": "paddle"
+            },
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false,
+            "args": []
         }
     ]
 } 
