@@ -162,7 +162,49 @@ python3 test_fuzzy_matching.py
 
 
 
-
+# 发信人设置弹框还是在主窗口后面，而且主窗口为什么在激活别的应用界面的时候仍然在最前面，而不是在后面？能像正常窗口一样吗
+从截图可以看出，"发信人设置"弹框确实被主窗口遮挡了，而且主窗口一直保持在最前面。这是因为我们之前设置的 attributes('-topmost', True) 导致主窗口总是置顶。
+让我修复这两个问题：
+    发信人设置弹框层级问题
+    主窗口总是置顶的问题
+现在让我修复这两个问题：
+    修复发信人设置弹框层级问题
+    移除主窗口的置顶设置
+修复总结
+我已经修复了两个窗口层级问题：
+1. 移除了主窗口的置顶设置
+问题: 主窗口设置了 attributes('-topmost', True)，导致它总是显示在最前面。
+修复: 移除了 LoadingWindow 类中的置顶设置：
+    # 修复前
+    self.root.attributes('-topmost', True)
+    # 修复后  
+    self.root.lift()  # 只提升层级，不置顶
+2. 优化了发信人设置弹框的层级控制
+问题: 弹框层级控制过于复杂，可能导致层级混乱。
+修复: 简化了弹框的层级控制：
+    # 修复前
+    settings_window.lift(self.root)  # 提升到主窗口之上
+    settings_window.attributes('-topmost', True)  # 设置为最顶层
+    settings_window.after(50, lambda: settings_window.lift(self.root))
+    settings_window.after(100, lambda: settings_window.focus_force())
+    # 修复后
+    settings_window.lift()  # 提升到最顶层
+    settings_window.focus_force()  # 强制设置焦点
+3. 添加了正确的窗口关闭处理
+新增: 为弹框添加了正确的关闭事件处理：
+def on_closing():
+    settings_window.grab_release()  # 释放模态
+    settings_window.destroy()       # 销毁窗口
+settings_window.protocol("WM_DELETE_WINDOW", on_closing)
+4. 测试验证
+你可以运行测试脚本来验证修复效果：
+conda activate paddle
+python3 test_window_layering.py
+5. 预期效果
+修复后应该：
+✅ 主窗口行为正常 - 不再总是置顶，可以正常切换到其他应用
+✅ 弹框显示正确 - "发信人设置"弹框会显示在主窗口之上
+✅ 层级关系正确 - 弹框关闭后，主窗口恢复正常层级
 
 
 

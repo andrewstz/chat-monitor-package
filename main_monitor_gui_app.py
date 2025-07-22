@@ -141,9 +141,8 @@ class LoadingWindow:
         )
         self.status_label.pack()
         
-        # 设置窗口置顶
+        # 设置窗口层级（移除置顶，让窗口行为更正常）
         self.root.lift()
-        self.root.attributes('-topmost', True)
         
     def update_status(self, message):
         """更新状态信息"""
@@ -476,7 +475,8 @@ class ChatMonitorGUI:
                             match_result = current_fuzzy_matcher.match_sender(first_line)
                             if match_result:
                                 contact, sender, similarity = match_result
-                                self.safe_add_log_message(f"✅ 第一行匹配成功: {contact} (相似度: {similarity:.2f})")
+                                # {contact} 
+                                self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
                                 now = time.time()
                                 if now - self.last_reply_time > reply_wait:
                                     self.safe_add_detection_result(
@@ -615,11 +615,6 @@ class ChatMonitorGUI:
             settings_window.transient(self.root)  # 设置为主窗口的子窗口
             settings_window.grab_set()  # 模态窗口
             
-            # 强制设置窗口层级，确保显示在主窗口之上
-            settings_window.lift(self.root)  # 提升到主窗口之上
-            settings_window.focus_force()  # 强制设置焦点
-            settings_window.attributes('-topmost', True)  # 设置为最顶层
-            
             # 居中显示
             settings_window.update_idletasks()
             x = (settings_window.winfo_screenwidth() // 2) - (settings_window.winfo_width() // 2)
@@ -629,9 +624,16 @@ class ChatMonitorGUI:
             # 创建界面
             self.create_contacts_settings_ui(settings_window)
             
-            # 确保窗口保持在最顶层
-            settings_window.after(50, lambda: settings_window.lift(self.root))
-            settings_window.after(100, lambda: settings_window.focus_force())
+            # 确保弹框显示在主窗口之上
+            settings_window.lift()  # 提升到最顶层
+            settings_window.focus_force()  # 强制设置焦点
+            
+            # 绑定窗口关闭事件，确保关闭时释放模态
+            def on_closing():
+                settings_window.grab_release()
+                settings_window.destroy()
+            
+            settings_window.protocol("WM_DELETE_WINDOW", on_closing)
             
         except Exception as e:
             self.safe_add_log_message(f"❌ 打开发信人设置失败: {str(e)}")
