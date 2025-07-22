@@ -405,8 +405,8 @@ class YOLOModelManager:
             print(f"🔍 可执行文件目录: {os.path.dirname(sys.executable)}")
         
         # 调试断点 - 可以通过环境变量启用
-        if os.environ.get('CHATMONITOR_DEBUG') == '1':
-            import pdb; pdb.set_trace()
+        # if os.environ.get('CHATMONITOR_DEBUG') == '1':
+        #     import pdb; pdb.set_trace()
         
         # 远程调试支持
         if os.environ.get('CHATMONITOR_REMOTE_DEBUG') == '1':

@@ -33,12 +33,21 @@ class ConfigManager:
                 current_modified = os.path.getmtime(self.config_path)
                 # 检查文件是否被修改
                 if current_modified > self.last_modified:
+                    # 添加延迟，确保文件写入完成
+                    time.sleep(0.1)
+                    
                     with open(self.config_path, 'r', encoding='utf-8') as f:
                         new_config = yaml.safe_load(f)
                         if new_config:
                             old_config = self.config.copy()
                             self.config = new_config
                             self.last_modified = current_modified
+                            
+                            # 添加调试信息
+                            # print(f"🔄 配置更新调试信息:")
+                            # print(f"  旧配置中的target_contacts: {old_config.get('chat_app', {}).get('target_contacts', [])}")
+                            # print(f"  新配置中的target_contacts: {new_config.get('chat_app', {}).get('target_contacts', [])}")
+                            
                             # 通知配置变更
                             self._notify_config_changed(old_config, new_config)
                             print(f"✅ 配置文件已更新: {self.config_path}")
@@ -103,6 +112,7 @@ class ConfigManager:
         if self.is_watching:
             return
         try:
+            # Observer：watchdog 检测文件变更
             self.observer = Observer()
             event_handler = ConfigFileHandler(self)
             self.observer.schedule(event_handler, path=os.path.dirname(self.config_path) or '.', recursive=False)
@@ -194,11 +204,11 @@ if WATCHDOG_AVAILABLE:
             if not event.is_directory and os.path.abspath(event.src_path) == os.path.abspath(self.config_manager.config_path):
                 # 避免重复触发
                 current_time = time.time()
-                if current_time - self.last_modified > 1:  # 1秒内只触发一次
+                if current_time - self.last_modified > 2:  # 2秒内只触发一次，增加延迟
                     self.last_modified = current_time
                     print(f"🔄 检测到配置文件变更: {event.src_path}")
                     # 延迟加载，确保文件写入完成
-                    threading.Timer(0.5, self.config_manager.load_config).start()
+                    threading.Timer(1.0, self.config_manager.load_config).start()
 
 # 全局配置管理器实例
 config_manager = None

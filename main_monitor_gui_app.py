@@ -459,7 +459,9 @@ class ChatMonitorGUI:
                     # 处理检测结果
                     for result in results:
                         text = result['text']
-                        if text and FUZZY_MATCHER:
+                        # 重新获取最新的FUZZY_MATCHER（确保获取到最新的联系人） 要不然和保存那里的作用域都不一样
+                        from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
+                        if text and current_fuzzy_matcher:
                             # 添加调试信息
                             self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
                             
@@ -467,11 +469,11 @@ class ChatMonitorGUI:
                             self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                             
                             # 检查所有行文本
-                            all_lines = text.splitlines()
-                            self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
+                            # all_lines = text.splitlines()
+                            # self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
                             
                             # 检查第一行
-                            match_result = FUZZY_MATCHER.match_sender(first_line)
+                            match_result = current_fuzzy_matcher.match_sender(first_line)
                             if match_result:
                                 contact, sender, similarity = match_result
                                 self.safe_add_log_message(f"✅ 第一行匹配成功: {contact} (相似度: {similarity:.2f})")
@@ -762,8 +764,9 @@ class ChatMonitorGUI:
             
             conf["chat_app"]["target_contacts"] = contacts
             
-            # 保存配置文件
-            config_path = os.path.expanduser("~/ChatMonitor/config_with_yolo.yaml")
+            # 保存配置文件 - 使用与读取相同的路径
+            from main_monitor_dynamic import get_config_path
+            config_path = get_config_path()
             import yaml
             with open(config_path, 'w', encoding='utf-8') as f:
                 yaml.dump(conf, f, default_flow_style=False, allow_unicode=True)

@@ -1,0 +1,83 @@
+chat_app:
+  fuzzy_match:
+    enabled: true
+    min_length: 2
+    similarity_threshold: 0.51
+  name: Mango
+  target_contacts:
+  - 客户端项目
+  - js_wbmalia-研发部助理
+  - 人事小姐姐
+debug:
+  save_detection_images: true
+  save_processed_images: false
+  verbose: true
+included_features:
+- yolo_detection
+- tesseract_ocr
+- bert_semantic
+- network_monitor
+- process_monitor
+monitor:
+  check_interval: 3
+  reply_wait: 60
+network_monitor:
+  check_interval: 60
+  consecutive_failures: 6
+  enabled: true
+  test_targets:
+  - method: http
+    name: 谷歌
+    url: https://www.google.com
+  - method: http
+    name: GitHub
+    url: https://github.com
+  timeout: 10
+  tolerance_minutes: 0.5
+ocr:
+  tesseract:
+    config: --psm 6
+    lang: chi_sim+eng
+    use_preprocessing: true
+  text_correction:
+    char_corrections:
+      '0': O
+      '1': l
+      '5': S
+      '8': B
+      儆: 惊
+      千: 于
+    enabled: true
+    phrase_corrections:
+      再见: 再见
+      发送照片: 发送照片
+      回复1: 回复1
+      好的: 好的
+      收到: 收到
+      谢谢: 谢谢
+preprocessing:
+  clahe:
+    clip_limit: 2.0
+    tile_grid_size:
+    - 8
+    - 8
+  denoising:
+    enabled: true
+    method: fastNlMeansDenoising
+  morphology:
+    enabled: true
+    kernel_size:
+    - 1
+    - 1
+    operation: CLOSE
+  threshold:
+    method: OTSU
+semantic:
+  confidence_threshold: 0.65
+  enabled: true
+  model_name: hfl/chinese-bert-wwm-ext
+yolo:
+  confidence: 0.7
+  enabled: true
+  model_path: models/best.pt
+  use_fallback: true
