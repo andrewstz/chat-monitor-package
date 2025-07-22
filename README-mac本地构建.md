@@ -1,4 +1,5 @@
 # 重要
+带图标的打包 build_macos_app_with_icon.sh
 构建完后单独打安装包： repack_working_app.sh
 conda activate paddle
 打包过程无需用户输入y确认： --noconfirm 参数来自动确认："--noconfirm" 
@@ -619,7 +620,17 @@ main_monitor_gui_app.py: "models/best.pt"
 解决方案
 让我重构代码，消除重复并统一配置管理：
 现在让我创建一个统一的配置管理函数： config_manager.py
-
-
+新的整合方案
+我创建了 build_macos_app_with_icon.sh，它结合了两者的优点：
+✅ 完整的生产级打包（来自 build_macos_app.sh）
+✅ 自动图标检测和设置（来自 build_with_icon.py）
+✅ 支持 assets 目录结构
+✅ 创建 DMG 安装包
+使用建议
+现在你有三个打包选项：
+build_macos_app.sh: 原始完整版本
+build_with_icon.py: 简化图标版本
+build_macos_app_with_icon.sh: 推荐使用 - 整合版本
+推荐使用 build_macos_app_with_icon.sh，因为它结合了完整功能和图标支持！
 
 

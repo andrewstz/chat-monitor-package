@@ -293,3 +293,30 @@ sleep 5 && grep -i icon /tmp/chatmonitor_debug.log
 refresh_icon.py
 
 ASSETS_STRUCTURE.md
+
+
+
+# build_with_icon.py是在build_macos_app.sh先打出app包的基础上再打的吗？
+�� 脚本关系分析
+build_macos_app.sh (Shell 脚本)
+    功能: 完整的 macOS 应用打包流程
+    特点:
+    使用 --onedir 模式（目录形式）
+    包含详细的权限配置
+    创建 DMG 安装包
+    更完整的资源管理
+build_with_icon.py (Python 脚本)
+    功能: 专门处理图标的应用打包
+    特点:
+    使用 --onefile 模式（单文件）
+    专注于图标设置
+    更简单的流程
+🔄 它们的关系
+不是依赖关系，而是两个独立的打包方案：
+build_macos_app.sh: 完整的生产级打包
+build_with_icon.py: 简化的图标专用打包
+�� 建议整合
+让我创建一个整合版本，结合两者的优点：
+
+
+
