@@ -511,8 +511,21 @@ class ChatMonitorGUI:
                     # 检查进程
                     if not check_process(app_name):
                         self.safe_add_log_message(f"未找到 {app_name} 进程")
+                        # 添加进程退出的声音提醒
+                        try:
+                            play_sound("error")
+                            self.safe_add_log_message("🔊 播放进程退出提醒音")
+                        except Exception as e:
+                            self.safe_add_log_message(f"❌ 进程退出提醒音播放失败: {str(e)}")
                         time.sleep(check_interval)
                         continue
+                    
+                    # 网络监控检查
+                    try:
+                        from main_monitor_dynamic import check_network_with_alert
+                        check_network_with_alert()
+                    except Exception as e:
+                        self.safe_add_log_message(f"网络监控检查失败: {str(e)}")
                     
                     # 截图
                     img = screenshot()
