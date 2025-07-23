@@ -275,4 +275,12 @@ PowerShell备用: 使用(New-Object Media.SoundPlayer).PlaySync()
 
 
 
+# 📁 Windows打包文件位置
+成功构建后，文件会在以下位置：
+单文件版本
+dist\ChatMonitor.exe
+便携式版本
+dist\ChatMonitor\ChatMonitor.exe
+zip包： 
+ChatMonitor_Windows_Portable.zip
 
