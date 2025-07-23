@@ -56,7 +56,7 @@ deactivate
 rmdir /s .venv
 或者
 Remove-Item -Recurse -Force .venv
-2. 重新创建Python 3.9环境
+2. `重新创建Python 3.9环境`
 uv venv --python 3.9
 激活环境
 .venv\Scripts\activate
@@ -103,6 +103,28 @@ uv pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ ultralytics
 where python
 测试关键包
 python -c "import ultralytics; print('环境配置成功！')"
+
+## uv venv --python 3.9时如何指定国内
+�� 方法1: 使用 --index-url 参数
+    # 使用清华镜像源
+    uv venv --python 3.9 --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+
+    # 使用阿里云镜像源
+    uv venv --python 3.9 --index-url https://mirrors.aliyun.com/pypi/simple/
+
+    # 使用豆瓣镜像源
+    uv venv --python 3.9 --index-url https://pypi.douban.com/simple/
+🚀 方法3: 使用配置文件
+创建 pyproject.toml 文件：
+[project]
+name = "chat-monitor"
+version = "0.1.0"
+[tool.uv]
+index-url = "https://mirrors.aliyun.com/pypi/simple/"
+然后运行： uv venv --python 3.9
+�� 方法4: 在Windows批处理脚本中使用
+让我创建一个使用国内镜像源的UV环境设置脚本：
+setup_uv_with_mirror.bat
 
 
 
@@ -246,6 +268,46 @@ call "%UV_PATH%\Scripts\activate.bat"
 ✅ 备用查找 uv: 如果 .venv 不存在
 ✅ 动态激活: 使用找到的正确路径
 ✅ 详细诊断: 如果找不到环境，会显示目录内容
+
+
+
+✅ 现在有更简单的解决方案！
+问题解决：
+1. 简化了安装脚本
+✅ 移除复杂检查: 不再尝试复杂的依赖检查
+✅ 直接安装: 使用 uv pip install 安装依赖
+✅ 避免语法错误: 不再有复杂的批处理语法
+2. 创建了独立的检查脚本
+✅ check_dependencies.bat: 专门检查依赖状态
+✅ 逐个检查: 每个依赖单独检查
+✅ 清晰报告: 显示哪些依赖已安装，哪些缺失
+.\check_dependencies.bat
+.\setup_windows_uv_simple_english.bat
+
+
+
+✅ PowerShell执行策略问题已修复！
+问题原因：
+1. PowerShell执行策略限制
+.venv\Scripts\activate : 无法加载文件 ... 因为在此系统上禁止运行脚本
+2. 解决方案：
+✅ 优先使用 .bat: call "%UV_PATH%\Scripts\activate.bat"
+✅ 备用使用 .ps1: powershell -ExecutionPolicy Bypass -Command "& '%UV_PATH%\Scripts\activate.ps1'"
+✅ 绕过执行策略: -ExecutionPolicy Bypass
+修复内容：
+1. 多重激活方法
+优先尝试 .bat 文件
+if exist "%UV_PATH%\Scripts\activate.bat" (
+    echo Using activate.bat...
+    call "%UV_PATH%\Scripts\activate.bat"
+) else if exist "%UV_PATH%\Scripts\activate.ps1" (
+    echo Using activate.ps1 with bypass...
+    powershell -ExecutionPolicy Bypass -Command "& '%UV_PATH%\Scripts\activate.ps1'"
+)
+2. 绕过PowerShell限制
+✅ -ExecutionPolicy Bypass: 临时绕过执行策略
+✅ & 操作符: 正确执行PowerShell脚本
+✅ 错误处理: 如果都失败则显示错误
 
 
 

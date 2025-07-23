@@ -1,7 +1,7 @@
 [project]
-name = "chat-monitor"
+name = "chat-monitor-no-playsound"
 version = "0.1.0"
-description = "Chat Monitor Application"
+description = "Chat Monitor Application (No Playsound)"
 requires-python = ">=3.9,<3.14"
 dependencies = [
     "opencv-python>=4.8.0",

@@ -31,7 +31,18 @@ if exist "..\.venv\Scripts\activate.bat" (
 
 :: Activate UV environment
 echo Activating UV environment at %UV_PATH%...
-call "%UV_PATH%\Scripts\activate.bat"
+:: Try different activation methods
+if exist "%UV_PATH%\Scripts\activate.bat" (
+    echo Using activate.bat...
+    call "%UV_PATH%\Scripts\activate.bat"
+) else if exist "%UV_PATH%\Scripts\activate.ps1" (
+    echo Using activate.ps1 with bypass...
+    powershell -ExecutionPolicy Bypass -Command "& '%UV_PATH%\Scripts\activate.ps1'"
+) else (
+    echo ERROR: No activation script found
+    pause
+    exit /b 1
+)
 
 :: Install PyInstaller
 echo Installing PyInstaller...
