@@ -190,9 +190,39 @@ class ConfigManager:
         
         return {
             "enabled": network_conf.get("enabled", True),
+            "check_interval": network_conf.get("check_interval", 10),
+            "timeout": network_conf.get("timeout", 5),
             "consecutive_failures": network_conf.get("consecutive_failures", 3),
-            "tolerance_minutes": network_conf.get("tolerance_minutes", 1)
+            "tolerance_minutes": network_conf.get("tolerance_minutes", 0.1)
         }
+    
+    def update_network_config(self, new_config: Dict[str, Any]) -> bool:
+        """更新网络监控配置"""
+        try:
+            # 读取当前配置
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            # 确保 network_monitor 部分存在
+            if "network_monitor" not in config:
+                config["network_monitor"] = {}
+            
+            # 更新网络监控配置
+            config["network_monitor"].update(new_config)
+            
+            # 保存配置
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+            
+            # 重新加载配置
+            self.load_config()
+            
+            print(f"✅ 网络监控配置已更新: {new_config}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ 更新网络监控配置失败: {e}")
+            return False
 
 if WATCHDOG_AVAILABLE:
     class ConfigFileHandler(FileSystemEventHandler):

@@ -1,10 +1,10 @@
 #!/bin/bash
-# macOS 应用程序构建脚本（带图标版本）
-# 使用 PyInstaller 创建带图标的 .app 可执行程序
+# macOS 应用程序构建脚本（完整版本）
+# 使用 PyInstaller 创建带图标的 .app 可执行程序，并创建 DMG 安装包
 
 set -e  # 遇到错误立即退出
 
-echo "🍎 macOS 应用程序构建脚本启动（带图标版本）"
+echo "🍎 macOS 应用程序构建脚本启动（完整版本）"
 echo "📁 当前目录: $(pwd)"
 
 # 检查系统
@@ -258,17 +258,48 @@ EOF
     echo "🔓 移除应用隔离属性..."
     xattr -rd com.apple.quarantine "$RELEASE_DIR/$APP_NAME" 2>/dev/null || true
     
-    # # 创建DMG安装包
-    # echo "📦 创建DMG安装包..."
-    # DMG_NAME="ChatMonitor-macOS-v1.0.0.dmg"
-    # DMG_PATH="$RELEASE_DIR/$DMG_NAME"
+    # 创建DMG安装包
+    echo "📦 创建DMG安装包..."
+    DMG_NAME="ChatMonitor-macOS-v1.0.0.dmg"
+    DMG_PATH="$RELEASE_DIR/$DMG_NAME"
     
-    # # 使用hdiutil创建DMG
-    # hdiutil create -volname "ChatMonitor" -srcfolder "$RELEASE_DIR/$APP_NAME" -ov "$DMG_PATH"
+    # 使用更安全的 DMG 创建方法
+    echo "🔧 使用安全的 DMG 创建方法..."
     
-    # DMG_SIZE=$(du -sh "$DMG_PATH" | cut -f1)
-    # echo "✅ DMG创建成功: $DMG_PATH"
-    # echo "📦 DMG大小: $DMG_SIZE"
+    # 先创建一个临时目录
+    TEMP_DMG_DIR="/tmp/ChatMonitor_dmg_temp"
+    rm -rf "$TEMP_DMG_DIR"
+    mkdir -p "$TEMP_DMG_DIR"
+    
+    # 复制应用程序到临时目录（使用 cp -R 保持所有属性）
+    echo "📋 复制应用程序到临时目录..."
+    cp -R "$RELEASE_DIR/$APP_NAME" "$TEMP_DMG_DIR/"
+    
+    # 确保所有文件都有正确的权限
+    echo "🔧 修复文件权限..."
+    find "$TEMP_DMG_DIR" -name "*.dylib" -exec chmod 755 {} \;
+    find "$TEMP_DMG_DIR" -name "*.so" -exec chmod 755 {} \;
+    find "$TEMP_DMG_DIR" -name "*.app" -exec chmod 755 {} \;
+    
+    # 移除应用隔离属性
+    echo "🔓 移除应用隔离属性..."
+    xattr -cr "$TEMP_DMG_DIR/$APP_NAME" 2>/dev/null || true
+    
+    # 创建 DMG
+    echo "📦 创建 DMG..."
+    hdiutil create -volname "ChatMonitor" -srcfolder "$TEMP_DMG_DIR" -ov -format UDZO "$DMG_PATH"
+    
+    # 清理临时目录
+    rm -rf "$TEMP_DMG_DIR"
+    
+    if [ $? -eq 0 ]; then
+        DMG_SIZE=$(du -sh "$DMG_PATH" | cut -f1)
+        echo "✅ DMG创建成功: $DMG_PATH"
+        echo "📦 DMG大小: $DMG_SIZE"
+    else
+        echo "❌ DMG创建失败"
+        exit 1
+    fi
     
     echo ""
     echo "🎉 构建完成！"
@@ -281,6 +312,12 @@ EOF
     echo "  3. 从启动台或应用程序文件夹启动"
     echo ""
     echo "⚠️  注意: 首次运行可能需要在系统偏好设置中允许运行"
+    echo "🔧 构建特性:"
+    echo "  - 使用 PyInstaller 创建独立的 .app 包"
+    echo "  - 自动处理图标和资源文件"
+    echo "  - 使用安全的 DMG 创建方法"
+    echo "  - 修复文件权限和符号链接问题"
+    echo "  - 移除应用隔离属性"
     
 else
     echo "❌ 构建失败，未找到可执行文件"

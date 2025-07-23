@@ -330,3 +330,67 @@ build_with_icon.py: 简化的图标专用打包
 2、没有默认启动监控。
 尝试设置图标 for icon_path in icon_paths:。。。 return 改为 break，否则影响后面的gui窗口启动后绑定事件 self.root.bind('<Map>', self.on_window_ready)，从而不去启动监控
 
+
+
+# 窗口打开默认大小没有包含底部按钮
+不设置固定大小，让窗口自适应内容
+    self.root.resizable(True, True)
+配置窗口网格权重，确保自适应
+    window.columnconfigure(0, weight=1)
+    window.rowconfigure(0, weight=1)
+    main_frame.grid(row=0, column=0, sticky="nsew")
+    main_frame.columnconfigure(0, weight=1)
+让窗口自适应内容大小
+    window.update_idletasks()
+    window.geometry("") 
+desc_label.grid
+让窗口自适应内容大小
+    window.update_idletasks()
+    window.geometry("")   清除任何固定大小设置
+✅ 修复完成！
+修复内容：
+✅ 修复了 messagebox 导入错误：
+在导入语句中添加了 messagebox
+解决了保存设置时的 name 'messagebox' is not defined 错误
+✅ 实现了窗口自适应功能：
+主界面：移除了固定的 geometry("500x600")，让窗口自适应内容
+网络监控设置窗口：移除了固定大小，使用网格布局和自适应代码
+发信人设置窗口：移除了固定大小，使用网格布局和自适应代码
+✅ 改进了布局系统：
+使用 grid 布局替代 pack 布局，更好地控制组件位置
+配置了网格权重，确保组件能够正确扩展
+添加了 window.geometry("") 来清除固定大小设置
+使用 window.update_idletasks() 确保布局计算完成
+✅ 优化了界面元素：
+增加了输入框宽度（从10改为15）
+改进了文本对齐和间距
+确保所有按钮都能正确显示
+
+
+## 主程序刚启动的时候是这样的，底部还有两个按钮没有显示出来呢。 其他弹窗的按钮则是正常显示
+主界面使用了 pack 布局来排列按钮，但没有给按钮框架足够的空间。让我修复这个问题：
+self.button_frame.columnconfigure
+现在让我修改按钮的布局，使用网格布局而不是pack布局，这样可以更好地控制按钮的排列：
+现在让我测试修复后的主界面：
+pkill -f "python3 main_monitor_gui_app.py" && sleep 2
+echo "" > /tmp/chatmonitor_debug.log && python3 main_monitor_gui_app.py &
+sleep 10 && tail -5 /tmp/chatmonitor_debug.log
+✅ 主界面按钮布局修复完成！
+修复内容：
+✅ 改进了按钮框架布局：
+添加了 sticky="ew" 让按钮框架水平扩展
+配置了 columnconfigure(0, weight=1) 让按钮框架可以扩展
+✅ 改用网格布局：
+将按钮从 pack 布局改为 grid 布局
+每个按钮都有明确的列位置（column 0-4）
+这样可以更好地控制按钮的排列和间距
+✅ 添加了自适应代码：
+在初始化完成后添加了 root.update_idletasks()
+使用 root.geometry("") 清除固定大小设置
+✅ 优化了布局权重：
+主框架的 rowconfigure(2, weight=1) 让文本框区域可以扩展
+按钮框架的 sticky="ew" 确保按钮水平排列
+
+
+
+

@@ -6,7 +6,7 @@ ChatMonitor GUI 版本 - 用于打包成 .app
 """
 
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import ttk, scrolledtext, messagebox
 import threading
 import time
 import sys
@@ -158,7 +158,7 @@ class ChatMonitorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("ChatMonitor")
-        self.root.geometry("500x600")
+        # 不设置固定大小，让窗口自适应内容
         self.root.resizable(True, True)
         
         # 设置窗口图标
@@ -209,7 +209,8 @@ class ChatMonitorGUI:
         
         # 控制按钮框架
         self.button_frame = ttk.Frame(self.main_frame)
-        self.button_frame.grid(row=3, column=0, pady=(10, 0))
+        self.button_frame.grid(row=3, column=0, pady=(10, 0), sticky="ew")
+        self.button_frame.columnconfigure(0, weight=1)  # 让按钮框架可以扩展
         
         # 开始/停止按钮
         self.start_stop_button = ttk.Button(
@@ -217,7 +218,7 @@ class ChatMonitorGUI:
             text="开始监控",
             command=self.toggle_monitoring
         )
-        self.start_stop_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.start_stop_button.grid(row=0, column=0, padx=(0, 10))
         
         # 清空按钮
         self.clear_button = ttk.Button(
@@ -225,7 +226,7 @@ class ChatMonitorGUI:
             text="清空记录",
             command=self.clear_logs
         )
-        self.clear_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.clear_button.grid(row=0, column=1, padx=(0, 10))
         
         # 发信人设置按钮
         self.contacts_button = ttk.Button(
@@ -233,7 +234,15 @@ class ChatMonitorGUI:
             text="发信人设置",
             command=self.open_contacts_settings
         )
-        self.contacts_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.contacts_button.grid(row=0, column=2, padx=(0, 10))
+        
+        # 网络监控频率设置按钮
+        self.network_button = ttk.Button(
+            self.button_frame,
+            text="网络监控频率",
+            command=self.open_network_settings
+        )
+        self.network_button.grid(row=0, column=3, padx=(0, 10))
         
         # 关闭按钮
         self.close_button = ttk.Button(
@@ -241,10 +250,14 @@ class ChatMonitorGUI:
             text="关闭程序",
             command=self.close_program
         )
-        self.close_button.pack(side=tk.LEFT)
+        self.close_button.grid(row=0, column=4)
         
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.close_program)
+        
+        # 让窗口自适应内容大小
+        self.root.update_idletasks()
+        self.root.geometry("")  # 清除任何固定大小设置
         
         # 监控状态
         self.monitoring = False
@@ -698,7 +711,7 @@ class ChatMonitorGUI:
             # 创建设置窗口
             settings_window = tk.Toplevel(self.root)
             settings_window.title("发信人设置")
-            settings_window.geometry("500x400")
+            # 不设置固定大小，让窗口自适应内容
             settings_window.resizable(True, True)
             settings_window.transient(self.root)  # 设置为主窗口的子窗口
             settings_window.grab_set()  # 模态窗口
@@ -729,14 +742,15 @@ class ChatMonitorGUI:
     
     def create_contacts_settings_ui(self, window):
         """创建发信人设置界面"""
+        # 配置窗口网格权重，确保自适应
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(0, weight=1)
+        
         # 主框架
         main_frame = ttk.Frame(window, padding="20")
         main_frame.grid(row=0, column=0, sticky="nsew")
-        
-        # 配置网格权重
-        window.columnconfigure(0, weight=1)
-        window.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(4, weight=1)  # 让文本框区域可以扩展
         
         # 标题
         title_label = ttk.Label(main_frame, text="监控发信人设置", font=("Arial", 16, "bold"))
@@ -794,6 +808,10 @@ class ChatMonitorGUI:
         # 取消按钮
         cancel_button = ttk.Button(button_frame, text="取消", command=window.destroy)
         cancel_button.pack(side="left")
+        
+        # 让窗口自适应内容大小
+        window.update_idletasks()
+        window.geometry("")  # 清除任何固定大小设置
     
     def load_contacts_to_text(self, text_widget, status_label):
         """加载发信人到文本框"""
@@ -895,6 +913,218 @@ class ChatMonitorGUI:
         """更新状态标签"""
         status_label.config(text=message)
         status_label.winfo_toplevel().update_idletasks()
+    
+    def open_network_settings(self):
+        """打开网络监控频率设置窗口"""
+        try:
+            # 创建新窗口
+            settings_window = tk.Toplevel(self.root)
+            settings_window.title("网络监控频率设置")
+            # 不设置固定大小，让窗口自适应内容
+            settings_window.resizable(True, True)
+            
+            # 设置窗口层级
+            settings_window.transient(self.root)
+            settings_window.grab_set()
+            settings_window.lift()
+            settings_window.focus_force()
+            
+            # 创建界面
+            self.create_network_settings_ui(settings_window)
+            
+            # 设置关闭事件
+            def on_closing():
+                settings_window.grab_release()
+                settings_window.destroy()
+            settings_window.protocol("WM_DELETE_WINDOW", on_closing)
+            
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 打开网络监控设置失败: {str(e)}")
+    
+    def create_network_settings_ui(self, window):
+        """创建网络监控设置界面"""
+        # 配置窗口网格权重，确保自适应
+        window.columnconfigure(0, weight=1)
+        window.rowconfigure(0, weight=1)
+        
+        # 主框架
+        main_frame = ttk.Frame(window, padding="20")
+        main_frame.grid(row=0, column=0, sticky="nsew")
+        main_frame.columnconfigure(0, weight=1)
+        
+        # 标题
+        title_label = ttk.Label(main_frame, text="网络监控频率设置", font=("Arial", 16, "bold"))
+        title_label.grid(row=0, column=0, pady=(0, 20), sticky="w")
+        
+        # 说明文本
+        description_text = """网络监控参数说明：
+
+• 检测间隔：每次网络检测之间的时间间隔（秒）
+  推荐值：10-60秒，值越小检测越频繁
+
+• 超时时间：单次网络检测的最大等待时间（秒）
+  推荐值：5-10秒，值越大越稳定但响应越慢
+
+• 连续失败阈值：触发警报前允许的连续失败次数
+  推荐值：2-5次，值越大越稳定但响应越慢
+
+• 容错时间：连续失败后等待的时间（分钟）
+  推荐值：0.1-1分钟，值越小响应越快
+
+当前设置："""
+        desc_label = ttk.Label(main_frame, text=description_text, justify=tk.LEFT, font=("Arial", 10))
+        desc_label.grid(row=1, column=0, pady=(0, 20), sticky="w")
+        
+        # 参数输入框架
+        params_frame = ttk.LabelFrame(main_frame, text="网络监控参数", padding="10")
+        params_frame.grid(row=2, column=0, sticky="ew", pady=(0, 20))
+        params_frame.columnconfigure(1, weight=1)
+        
+        # 检测间隔
+        ttk.Label(params_frame, text="检测间隔（秒）:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.check_interval_var = tk.StringVar()
+        check_interval_entry = ttk.Entry(params_frame, textvariable=self.check_interval_var, width=15)
+        check_interval_entry.grid(row=0, column=1, padx=(10, 0), pady=5, sticky="w")
+        
+        # 超时时间
+        ttk.Label(params_frame, text="超时时间（秒）:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.timeout_var = tk.StringVar()
+        timeout_entry = ttk.Entry(params_frame, textvariable=self.timeout_var, width=15)
+        timeout_entry.grid(row=1, column=1, padx=(10, 0), pady=5, sticky="w")
+        
+        # 连续失败阈值
+        ttk.Label(params_frame, text="连续失败阈值:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.consecutive_failures_var = tk.StringVar()
+        consecutive_failures_entry = ttk.Entry(params_frame, textvariable=self.consecutive_failures_var, width=15)
+        consecutive_failures_entry.grid(row=2, column=1, padx=(10, 0), pady=5, sticky="w")
+        
+        # 容错时间
+        ttk.Label(params_frame, text="容错时间（分钟）:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.tolerance_minutes_var = tk.StringVar()
+        tolerance_minutes_entry = ttk.Entry(params_frame, textvariable=self.tolerance_minutes_var, width=15)
+        tolerance_minutes_entry.grid(row=3, column=1, padx=(10, 0), pady=5, sticky="w")
+        
+        # 状态标签
+        self.network_status_label = ttk.Label(main_frame, text="", font=("Arial", 10))
+        self.network_status_label.grid(row=3, column=0, pady=(0, 20), sticky="w")
+        
+        # 按钮框架
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=4, column=0, pady=(0, 20), sticky="ew")
+        
+        # 加载当前设置
+        self.load_network_settings()
+        
+        # 保存按钮
+        save_button = ttk.Button(
+            button_frame,
+            text="保存设置",
+            command=lambda: self.save_network_settings(window)
+        )
+        save_button.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 恢复默认按钮
+        default_button = ttk.Button(
+            button_frame,
+            text="恢复默认",
+            command=self.restore_network_defaults
+        )
+        default_button.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 取消按钮
+        cancel_button = ttk.Button(
+            button_frame,
+            text="取消",
+            command=window.destroy
+        )
+        cancel_button.pack(side=tk.RIGHT)
+        
+        # 让窗口自适应内容大小
+        window.update_idletasks()
+        window.geometry("")  # 清除任何固定大小设置
+    
+    def load_network_settings(self):
+        """加载当前网络监控设置"""
+        try:
+            from config_manager import get_config_manager
+            config_manager = get_config_manager()
+            network_config = config_manager.get_network_config()
+            
+            # 设置当前值
+            self.check_interval_var.set(str(network_config.get("check_interval", 10)))
+            self.timeout_var.set(str(network_config.get("timeout", 5)))
+            self.consecutive_failures_var.set(str(network_config.get("consecutive_failures", 3)))
+            self.tolerance_minutes_var.set(str(network_config.get("tolerance_minutes", 0.1)))
+            
+            self.update_network_status_label("✅ 已加载当前设置")
+            
+        except Exception as e:
+            self.update_network_status_label(f"❌ 加载设置失败: {str(e)}")
+    
+    def save_network_settings(self, window):
+        """保存网络监控设置"""
+        try:
+            # 获取输入值
+            check_interval = float(self.check_interval_var.get())
+            timeout = float(self.timeout_var.get())
+            consecutive_failures = int(self.consecutive_failures_var.get())
+            tolerance_minutes = float(self.tolerance_minutes_var.get())
+            
+            # 验证输入
+            if check_interval < 1 or timeout < 1 or consecutive_failures < 1 or tolerance_minutes < 0.01:
+                self.update_network_status_label("❌ 参数值无效，请检查输入")
+                return
+            
+            # 保存到配置文件
+            from config_manager import get_config_manager
+            config_manager = get_config_manager()
+            
+            # 更新网络监控配置
+            config_manager.update_network_config({
+                "check_interval": check_interval,
+                "timeout": timeout,
+                "consecutive_failures": consecutive_failures,
+                "tolerance_minutes": tolerance_minutes
+            })
+            
+            self.update_network_status_label("✅ 设置已保存，监控将立即生效")
+            
+            # 显示成功消息
+            messagebox.showinfo("成功", "网络监控频率设置已保存，监控将立即生效")
+            
+            # 关闭窗口
+            window.destroy()
+            
+        except ValueError:
+            self.update_network_status_label("❌ 输入格式错误，请检查数值")
+        except Exception as e:
+            self.update_network_status_label(f"❌ 保存设置失败: {str(e)}")
+    
+    def restore_network_defaults(self):
+        """恢复网络监控默认设置"""
+        try:
+            # 程序安装时的默认值
+            default_values = {
+                "check_interval": 60,      # 60秒
+                "timeout": 10,             # 10秒
+                "consecutive_failures": 6, # 6次
+                "tolerance_minutes": 0.5   # 0.5分钟
+            }
+            
+            # 设置默认值
+            self.check_interval_var.set(str(default_values["check_interval"]))
+            self.timeout_var.set(str(default_values["timeout"]))
+            self.consecutive_failures_var.set(str(default_values["consecutive_failures"]))
+            self.tolerance_minutes_var.set(str(default_values["tolerance_minutes"]))
+            
+            self.update_network_status_label("✅ 已恢复默认设置")
+            
+        except Exception as e:
+            self.update_network_status_label(f"❌ 恢复默认设置失败: {str(e)}")
+    
+    def update_network_status_label(self, message):
+        """更新网络设置状态标签"""
+        self.network_status_label.config(text=message)
     
     def close_program(self):
         """关闭程序"""
