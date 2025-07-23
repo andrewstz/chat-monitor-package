@@ -260,3 +260,19 @@ PowerShell备用: 使用(New-Object Media.SoundPlayer).PlaySync()
 
 
 
+# build_windows_uv_simple_final_fixed.bat
+�� 修复的问题：
+1. 移除了有问题的pyproject文件
+不再创建临时pyproject: 直接使用uv pip install安装依赖
+避免格式错误: 不再生成可能格式错误的配置文件
+2. 直接安装依赖
+明确指定包名: 避免依赖解析问题
+不包含playsound: 完全绕过音频库问题
+3. 简化的构建流程
+直接PyInstaller命令: 使用命令行参数而不是spec文件
+明确排除playsound: --exclude-module playsound
+包含所有必要资源: 确保应用完整性
+
+
+
+

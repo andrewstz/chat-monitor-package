@@ -77,6 +77,28 @@ network_monitor:
 
 ## 📦 安装指南
 
+### Windows 应用构建
+
+完整的Windows构建工具和脚本位于 `buildWin/` 目录：
+
+```bash
+# 进入Windows构建目录
+cd buildWin
+
+# 查看详细说明
+cat README.md
+
+# 环境设置
+setup_windows_uv_simple.bat
+
+# 构建应用
+build_windows_uv_simple_final_fixed.bat
+```
+
+构建结果：
+- `dist\ChatMonitor.exe` - 单文件可执行程序
+- `ChatMonitor_Windows_Portable.zip` - 便携式ZIP包
+
 ### macOS
 ```bash
 # 安装 Tesseract
@@ -102,6 +124,11 @@ sudo apt install tesseract-ocr tesseract-ocr-chi-sim
 
 # 启动程序
 start_monitor.bat
+
+# 构建Windows应用
+cd buildWin
+setup_windows_uv_simple.bat
+build_windows_uv_simple_final_fixed.bat
 ```
 
 ## 🔍 故障排除
