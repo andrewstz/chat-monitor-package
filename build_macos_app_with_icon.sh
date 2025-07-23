@@ -258,17 +258,17 @@ EOF
     echo "🔓 移除应用隔离属性..."
     xattr -rd com.apple.quarantine "$RELEASE_DIR/$APP_NAME" 2>/dev/null || true
     
-    # 创建DMG安装包
-    echo "📦 创建DMG安装包..."
-    DMG_NAME="ChatMonitor-macOS-v1.0.0.dmg"
-    DMG_PATH="$RELEASE_DIR/$DMG_NAME"
+    # # 创建DMG安装包
+    # echo "📦 创建DMG安装包..."
+    # DMG_NAME="ChatMonitor-macOS-v1.0.0.dmg"
+    # DMG_PATH="$RELEASE_DIR/$DMG_NAME"
     
-    # 使用hdiutil创建DMG
-    hdiutil create -volname "ChatMonitor" -srcfolder "$RELEASE_DIR/$APP_NAME" -ov "$DMG_PATH"
+    # # 使用hdiutil创建DMG
+    # hdiutil create -volname "ChatMonitor" -srcfolder "$RELEASE_DIR/$APP_NAME" -ov "$DMG_PATH"
     
-    DMG_SIZE=$(du -sh "$DMG_PATH" | cut -f1)
-    echo "✅ DMG创建成功: $DMG_PATH"
-    echo "📦 DMG大小: $DMG_SIZE"
+    # DMG_SIZE=$(du -sh "$DMG_PATH" | cut -f1)
+    # echo "✅ DMG创建成功: $DMG_PATH"
+    # echo "📦 DMG大小: $DMG_SIZE"
     
     echo ""
     echo "🎉 构建完成！"
