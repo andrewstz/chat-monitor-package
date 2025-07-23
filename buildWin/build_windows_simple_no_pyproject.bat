@@ -2,13 +2,12 @@
 chcp 936 >nul
 setlocal enabledelayedexpansion
 
-echo Building Windows application (Fixed Version - No playsound dependency)...
+echo Building Windows application (Simple Version - No pyproject.toml)...
 
 :: Check if UV environment exists in parent directory
 if not exist "..\.venv" (
     echo ERROR: UV environment not found in parent directory!
     echo Please run setup_windows_uv_simple_fixed.bat first
-    echo TIP: UV environment should be in the parent directory
     pause
     exit /b 1
 )
@@ -16,27 +15,22 @@ if not exist "..\.venv" (
 :: Activate UV environment from parent directory
 call ..\.venv\Scripts\activate.bat
 
-:: Install core dependencies directly without pyproject
-echo Installing core dependencies...
-uv pip install opencv-python ultralytics Pillow requests PyYAML psutil lap>=0.5.12 -i https://pypi.tuna.tsinghua.edu.cn/simple/
+:: Install dependencies directly
+echo Installing dependencies...
+pip install opencv-python ultralytics Pillow requests PyYAML psutil pyinstaller
 
-:: Install PyInstaller
-echo Installing PyInstaller...
-uv pip install pyinstaller -i https://pypi.tuna.tsinghua.edu.cn/simple/
-
-:: Create PyInstaller command directly
+:: Build with PyInstaller
 echo Building application with PyInstaller...
-uv run pyinstaller ^
+pyinstaller ^
     --onefile ^
     --windowed ^
     --name ChatMonitor ^
     --add-data "..\sounds;sounds" ^
     --add-data "..\models;models" ^
     --add-data "..\config_with_yolo.yaml;." ^
-    --add-data "..\audio_alternative.py;." ^
     --add-data "..\fuzzy_matcher.py;." ^
     --add-data "..\network_monitor.py;." ^
-    --add-data "..\status_monitor.py;." ^
+    --add-data "..\config_manager.py;." ^
     --hidden-import cv2 ^
     --hidden-import ultralytics ^
     --hidden-import PIL ^
@@ -50,7 +44,6 @@ uv run pyinstaller ^
     --hidden-import threading ^
     --hidden-import subprocess ^
     --hidden-import platform ^
-    --exclude-module playsound ^
     ..\main_monitor_gui_app.py
 
 :: Check if build was successful
@@ -69,7 +62,6 @@ if exist "dist\ChatMonitor.exe" (
     if exist "..\sounds" xcopy "..\sounds" "dist\ChatMonitor\sounds\" /E /I /Y
     if exist "..\models" xcopy "..\models" "dist\ChatMonitor\models\" /E /I /Y
     if exist "..\config_with_yolo.yaml" copy "..\config_with_yolo.yaml" "dist\ChatMonitor\"
-    if exist "..\audio_alternative.py" copy "..\audio_alternative.py" "dist\ChatMonitor\"
     
     :: Create portable ZIP
     if exist "ChatMonitor_Windows_Portable.zip" del "ChatMonitor_Windows_Portable.zip"
@@ -83,8 +75,6 @@ if exist "dist\ChatMonitor.exe" (
     echo 1. Run dist\ChatMonitor.exe (single file)
     echo 2. Run dist\ChatMonitor\ChatMonitor.exe (portable)
     echo 3. Extract ChatMonitor_Windows_Portable.zip to any location
-    echo.
-    echo Note: Audio features will use system commands (PowerShell) for playback
 ) else (
     echo.
     echo ERROR: Build failed!

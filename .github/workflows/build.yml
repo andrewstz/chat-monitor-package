@@ -31,7 +31,7 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor_windows main_monitor_dynamic.py
+        pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor_windows main_monitor_gui_app.py
         pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor_windows network_monitor.py
     
     - name: Create Windows package
@@ -81,7 +81,7 @@ jobs:
     
     - name: Build Linux executable
       run: |
-        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor_linux main_monitor_dynamic.py
+        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor_linux main_monitor_gui_app.py
         pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor_linux network_monitor.py
     
     - name: Create Linux package
@@ -129,7 +129,7 @@ jobs:
     
     - name: Build macOS executable
       run: |
-        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor_macos main_monitor_dynamic.py
+        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor_macos main_monitor_gui_app.py
         pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor_macos network_monitor.py
     
     - name: Create macOS package

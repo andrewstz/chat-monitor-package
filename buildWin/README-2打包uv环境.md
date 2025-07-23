@@ -311,3 +311,80 @@ if exist "%UV_PATH%\Scripts\activate.bat" (
 
 
 
+
+# 我看它（指build_windows_simple_no_pyproject.bat）会临时下载一些东西，这些如果使用build_windows_uv_simple_final_fixed.bat就不需要下载吧？
+你说得对！使用build_windows_uv_simple_final_fixed.bat确实可以避免重复下载，因为它使用的是uv pip install而不是pip install。
+UV方式（build_windows_uv_simple_final_fixed.bat）
+uv pip install opencv-python ultralytics Pillow requests PyYAML psutil
+uv pip install pyinstaller
+✅ 利用uv的缓存机制
+✅ 更快的依赖解析
+✅ 避免重复下载
+�� 推荐使用
+现在你有三个选择：
+build_windows_uv_simple_final_fixed.bat - 原始UV脚本（如果pyproject.toml没问题）
+build_windows_uv_fixed_no_pyproject.bat - 新的UV脚本（避免pyproject.toml）
+build_windows_simple_no_pyproject.bat - 简单脚本（使用pip）
+推荐使用 build_windows_uv_fixed_no_pyproject.bat，因为它：
+
+
+
+# 我看到你遇到了一个关键错误：Ultralytics requirement ['lap>=0.5.12'] not found。这是因为ultralytics需要lap包，但没有找到。让我帮你解决这个问题：
+�� 问题分析
+ultralytics依赖lap包 - 用于线性分配问题
+lap包未安装 - 在Windows上安装lap比较困难
+自动更新失败 - ultralytics尝试自动安装但失败了
+🛠️ 解决方案
+方案一：手动安装lap包
+cd buildWin
+call ..\.venv\Scripts\activate.bat
+uv pip install lap>=0.5.12
+方案二：使用预编译的lap包
+uv pip install lap --find-links https://download.pytorch.org/whl/torch_stable.html
+方案三：修改构建脚本，添加lap依赖
+echo Installing core dependencies...
+uv pip install opencv-python ultralytics Pillow requests PyYAML psutil lap>=0.5.12
+方案四：创建一个不依赖ultralytics的版本
+如果lap安装仍然有问题，我们可以创建一个简化版本：
+build_windows_no_ultralytics.bat
+影响的功能
+❌ 受影响的功能
+YOLO弹窗检测
+    无法使用AI模型检测聊天弹窗
+    无法识别弹窗中的文字内容
+    无法进行智能弹窗分类
+模型文件处理
+    无法加载models/best.pt等YOLO模型
+    无法进行模型推理
+    无法使用训练好的弹窗检测模型
+✅ 不受影响的功能
+GUI界面 - 完整的图形用户界面
+联系人配置 - 可视化联系人设置
+网络监控 - 实时网络状态检测
+屏幕截图 - 基本的屏幕截图功能
+`OCR文字识别 - 使用pytesseract进行文字识别`
+音频播放 - 警报声音播放
+配置文件管理 - 动态配置更新
+模糊匹配 - 联系人名称模糊匹配
+
+
+## uv pip install lap>=0.5.12可以指定国内源吗
+是的，可以指定国内源！uv支持多种方式指定国内镜像源：
+�� 指定国内源的方法
+方法一：使用 --index-url 参数
+uv pip install lap>=0.5.12 --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+方法二：使用 -i 简写
+uv pip install lap>=0.5.12 -i https://pypi.tuna.tsinghua.edu.cn/simple/
+方法三：使用 --extra-index-url 添加额外源
+uv pip install lap>=0.5.12 --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+⚠️ 如果lap安装失败
+如果lap包在Windows上安装困难，可以尝试：
+方案一：使用预编译包
+uv pip install lap -i https://download.pytorch.org/whl/torch_stable.html
+方案二：使用conda安装
+conda install -c conda-forge lap
+验证安装
+python -c "import lap; print('lap安装成功')"
+
+
+

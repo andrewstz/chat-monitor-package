@@ -36,10 +36,10 @@ jobs:
     - name: Build executable
       run: |
         if [ "$RUNNER_OS" = "Windows" ]; then
-          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor main_monitor_gui_app.py
           pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor network_monitor.py
         else
-          pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name chat_monitor main_monitor_dynamic.py
+          pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor main_monitor_gui_app.py
           pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor network_monitor.py
         fi
     
