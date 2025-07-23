@@ -1,7 +1,7 @@
 # 重要
+conda activate paddle
 带图标的打包 build_macos_app_with_icon.sh
 构建完后单独打安装包： repack_working_app.sh
-conda activate paddle
 打包过程无需用户输入y确认： --noconfirm 参数来自动确认："--noconfirm" 
 界面调试： chmod +x start_debug.sh
 

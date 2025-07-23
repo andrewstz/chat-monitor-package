@@ -2,38 +2,35 @@
 chcp 936 >nul
 setlocal enabledelayedexpansion
 
-echo Windows Application Build Script Starting
+echo ChatMonitor Windows UV Build Script
 echo Current Directory: %cd%
 
-:: Check system
-if not "%OS%"=="Windows_NT" (
-    echo ERROR: This script is only for Windows
-    exit /b 1
-)
-
-:: Check Python environment
-python --version >nul 2>&1
+:: Check uv environment
+echo Checking uv environment...
+uv --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python not found, please install Python 3.8+
+    echo ERROR: uv not found
+    pause
     exit /b 1
 )
 
-echo Python Version:
-python --version
+echo UV Version:
+uv --version
 
 :: Check required files
+echo Checking required files...
 set REQUIRED_FILES=main_monitor_gui_app.py config_with_yolo.yaml fuzzy_matcher.py config_manager.py network_monitor.py
 
-echo Checking required files...
 for %%f in (%REQUIRED_FILES%) do (
     if not exist "%%f" (
         echo ERROR: Missing required file: %%f
+        pause
         exit /b 1
     )
     echo   OK: %%f
 )
 
-:: Check icon files (prefer PNG, shared with macOS)
+:: Check icon files
 echo Checking icon files...
 set ICON_FILE=
 if exist "assets\icons\icon.png" (
@@ -45,49 +42,25 @@ if exist "assets\icons\icon.png" (
 ) else if exist "assets\icon.png" (
     set ICON_FILE=assets\icon.png
     echo   OK: Found PNG icon file: !ICON_FILE!
-) else if exist "icons\icon.png" (
-    set ICON_FILE=icons\icon.png
-    echo   OK: Found PNG icon file: !ICON_FILE!
 ) else if exist "icon.png" (
     set ICON_FILE=icon.png
     echo   OK: Found PNG icon file: !ICON_FILE!
-) else if exist "assets\icons\icon.ico" (
-    set ICON_FILE=assets\icons\icon.ico
-    echo   OK: Found ICO icon file: !ICON_FILE!
-) else if exist "assets\icon.ico" (
-    set ICON_FILE=assets\icon.ico
-    echo   OK: Found ICO icon file: !ICON_FILE!
-) else if exist "icon.ico" (
-    set ICON_FILE=icon.ico
-    echo   OK: Found ICO icon file: !ICON_FILE!
 ) else (
-    echo   WARNING: No icon file found, will use default icon
-    echo   TIP: Run on macOS: python create_png_icon.py
-    echo   TIP: Then copy the entire directory to Windows
+    echo   WARNING: No icon file found
 )
 
-:: Build directories
-set BUILD_DIR=build_windows_app
-set RELEASE_DIR=release
-
+:: Clean build directory
 echo Cleaning build directory...
-if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
+if exist "dist" rmdir /s /q "dist"
+if exist "build" rmdir /s /q "build"
 
-echo Creating build directory: %BUILD_DIR%
-mkdir "%BUILD_DIR%"
+:: Create release directory
+set RELEASE_DIR=release
+if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
-:: Install PyInstaller
-echo Checking PyInstaller...
-python -c "import PyInstaller" 2>nul
-if errorlevel 1 (
-    echo Installing PyInstaller...
-    python -m pip install pyinstaller
-)
-
-echo Building Windows application...
-
-:: Create PyInstaller command
-set PYINSTALLER_CMD=python -m PyInstaller --onedir --windowed --name=ChatMonitor --noconfirm --add-data=config_with_yolo.yaml;. --add-data=fuzzy_matcher.py;. --add-data=config_manager.py;. --add-data=network_monitor.py;. --hidden-import=cv2 --hidden-import=numpy --hidden-import=psutil --hidden-import=pyautogui --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=yaml --hidden-import=PIL --hidden-import=pytesseract --hidden-import=playsound --hidden-import=watchdog --hidden-import=ultralytics --hidden-import=cv2 --hidden-import=numpy --hidden-import=tkinter --exclude-module=PyQt5 --exclude-module=PyQt6 --exclude-module=IPython --exclude-module=jupyter --exclude-module=scikit-learn --exclude-module=tensorflow --exclude-module=transformers --debug=all
+:: Build with uv
+echo Building Windows application with UV...
+set PYINSTALLER_CMD=uv run pyinstaller --onedir --windowed --name=ChatMonitor --noconfirm --add-data=config_with_yolo.yaml;. --add-data=fuzzy_matcher.py;. --add-data=config_manager.py;. --add-data=network_monitor.py;. --hidden-import=cv2 --hidden-import=numpy --hidden-import=psutil --hidden-import=pyautogui --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=yaml --hidden-import=PIL --hidden-import=pytesseract --hidden-import=playsound --hidden-import=watchdog --hidden-import=ultralytics --hidden-import=cv2 --hidden-import=numpy --hidden-import=tkinter --exclude-module=PyQt5 --exclude-module=PyQt6 --exclude-module=IPython --exclude-module=jupyter --exclude-module=scikit-learn --exclude-module=tensorflow --exclude-module=transformers
 
 :: Add icon if found
 if not "!ICON_FILE!"=="" (
@@ -105,10 +78,7 @@ echo Executing: !PYINSTALLER_CMD!
 if exist "dist\ChatMonitor\ChatMonitor.exe" (
     echo OK: Executable file created successfully: dist\ChatMonitor\ChatMonitor.exe
     
-    :: Create release directory
-    if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
-    
-    :: Copy executable to release directory
+    :: Copy to release directory
     echo Copying application to release directory...
     xcopy "dist\ChatMonitor" "%RELEASE_DIR%\ChatMonitor" /E /I /Y
     
@@ -118,27 +88,21 @@ if exist "dist\ChatMonitor\ChatMonitor.exe" (
         echo   OK: Copied sounds\
     )
     
-    if exist "test_img" (
-        xcopy "test_img" "%RELEASE_DIR%\ChatMonitor\test_img" /E /I /Y
-        echo   OK: Copied test_img\
-    )
-    
     if exist "models" (
         xcopy "models" "%RELEASE_DIR%\ChatMonitor\models" /E /I /Y
         echo   OK: Copied models\
     )
     
-    :: Copy assets directory if exist
     if exist "assets" (
         xcopy "assets" "%RELEASE_DIR%\ChatMonitor\assets" /E /I /Y
         echo   OK: Copied assets\
     )
     
-    :: Copy config file to accessible location
+    :: Copy config file
     copy "config_with_yolo.yaml" "%RELEASE_DIR%\ChatMonitor\"
     echo   OK: Copied config_with_yolo.yaml
     
-    :: Copy icon file to release directory
+    :: Copy icon file
     if not "!ICON_FILE!"=="" (
         copy "!ICON_FILE!" "%RELEASE_DIR%\ChatMonitor\icon.png"
         echo   OK: Copied icon to release directory: !ICON_FILE!
@@ -166,16 +130,11 @@ if exist "dist\ChatMonitor\ChatMonitor.exe" (
     echo - Process monitoring >> "%RELEASE_DIR%\ChatMonitor\README.txt"
     echo   OK: Created README file: README.txt
     
-    :: Calculate size
-    for /f "tokens=1" %%a in ('dir "%RELEASE_DIR%\ChatMonitor" /s ^| find "File(s)"') do set APP_SIZE=%%a
-    echo Application size: !APP_SIZE!
-    
     :: Create zip package
     echo Creating portable zip package...
-    set ZIP_NAME=ChatMonitor-Windows-v1.0.0.zip
+    set ZIP_NAME=ChatMonitor-Windows-UV-v1.0.0.zip
     set ZIP_PATH=%RELEASE_DIR%\%ZIP_NAME%
     
-    :: Use PowerShell to create ZIP file
     powershell -command "Compress-Archive -Path '%RELEASE_DIR%\ChatMonitor' -DestinationPath '%ZIP_PATH%' -Force"
     
     if exist "%ZIP_PATH%" (
@@ -194,10 +153,9 @@ if exist "dist\ChatMonitor\ChatMonitor.exe" (
     echo   2. Double-click start_chatmonitor.bat to start
     echo   3. Or double-click ChatMonitor.exe directly
     echo.
-    echo NOTE: First run may need Windows firewall access
-    echo Build features:
-    echo   - Uses PyInstaller to create standalone exe
-    echo   - Auto-handles icons and resource files
+    echo UV Build features:
+    echo   - Uses UV for faster dependency management
+    echo   - Standalone executable with PyInstaller
     echo   - Portable version, no installation needed
     echo   - Includes startup script and documentation
     

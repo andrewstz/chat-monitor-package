@@ -1,111 +1,111 @@
 @echo off
-chcp 65001 >nul
+chcp 936 >nul
 setlocal enabledelayedexpansion
 
-echo 🪟 ChatMonitor Windows 环境安装脚本
-echo 📁 当前目录: %cd%
+echo ChatMonitor Windows Environment Setup Script
+echo Current Directory: %cd%
 
-:: 检查Python环境
-echo 🔍 检查Python环境...
+:: Check Python environment
+echo Checking Python environment...
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ 未找到Python，请先安装Python 3.8+
-    echo 💡 下载地址: https://www.python.org/downloads/
+    echo ERROR: Python not found, please install Python 3.8+
+    echo TIP: Download from https://www.python.org/downloads/
     pause
     exit /b 1
 )
 
-echo ✅ Python版本:
+echo Python Version:
 python --version
 
-:: 检查pip
-echo 🔍 检查pip...
+:: Check pip
+echo Checking pip...
 python -m pip --version >nul 2>&1
 if errorlevel 1 (
-    echo ❌ pip未安装或不可用
+    echo ERROR: pip not installed or not available
     pause
     exit /b 1
 )
 
-echo ✅ pip可用
+echo pip is available
 
-:: 升级pip
-echo 📦 升级pip...
+:: Upgrade pip
+echo Upgrading pip...
 python -m pip install --upgrade pip
 
-:: 安装依赖包
-echo 📦 安装Python依赖包...
-echo 💡 使用国内镜像源加速下载...
+:: Install dependencies
+echo Installing Python dependencies...
+echo TIP: Using mirror source for faster download...
 
-:: 设置pip镜像源
+:: Set pip mirror source
 set PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/
 set PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
 
-:: 安装核心依赖
-echo 📦 安装核心依赖...
+:: Install core dependencies
+echo Installing core dependencies...
 python -m pip install -r requirements_windows.txt
 
 if errorlevel 1 (
-    echo ❌ 依赖安装失败
-    echo 💡 尝试使用默认源安装...
+    echo ERROR: Dependency installation failed
+    echo TIP: Trying with default source...
     python -m pip install -r requirements_windows.txt
 )
 
-:: 安装PyInstaller
-echo 📦 安装PyInstaller...
+:: Install PyInstaller
+echo Installing PyInstaller...
 python -m pip install pyinstaller
 
-:: 检查macOS图标
-echo 🎨 检查macOS图标...
+:: Check macOS icons
+echo Checking macOS icons...
 if exist "assets\icons\icon.png" (
-    echo   ✅ 找到macOS图标文件
+    echo   OK: Found macOS icon files
 ) else (
-    echo   ⚠️  未找到图标文件
-    echo   💡 建议在macOS上运行: python create_png_icon.py
-    echo   💡 然后将整个目录复制到Windows环境
+    echo   WARNING: No icon files found
+    echo   TIP: Run on macOS: python create_png_icon.py
+    echo   TIP: Then copy the entire directory to Windows
 )
 
-:: 检查必要文件
-echo 🔍 检查必要文件...
+:: Check required files
+echo Checking required files...
 set REQUIRED_FILES=main_monitor_gui_app.py config_with_yolo.yaml fuzzy_matcher.py config_manager.py network_monitor.py
 
 for %%f in (%REQUIRED_FILES%) do (
     if not exist "%%f" (
-        echo ❌ 缺少必要文件: %%f
-        echo 💡 请确保在正确的目录中运行此脚本
+        echo ERROR: Missing required file: %%f
+        echo TIP: Make sure to run this script in the correct directory
         pause
         exit /b 1
     )
-    echo   ✅ %%f
+    echo   OK: %%f
 )
 
-:: 检查Tesseract
-echo 🔍 检查Tesseract OCR...
-python -c "import pytesseract; print('Tesseract路径:', pytesseract.get_tesseract_version())" 2>nul
+:: Check Tesseract
+echo Checking Tesseract OCR...
+python -c "import pytesseract; print('Tesseract path:', pytesseract.get_tesseract_version())" 2>nul
 if errorlevel 1 (
-    echo ⚠️  Tesseract未安装或配置
-    echo 💡 请安装Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
-    echo 💡 或者下载预编译版本
+    echo WARNING: Tesseract not installed or configured
+    echo TIP: Install Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
+    echo TIP: Or download pre-compiled version
 )
 
-:: 创建测试脚本
-echo 🔧 创建测试脚本...
+:: Create test script
+echo Creating test script...
 echo @echo off > test_windows_setup.bat
-echo echo 🧪 测试Windows环境... >> test_windows_setup.bat
-echo python -c "import cv2; import numpy; import psutil; import pyautogui; import requests; import yaml; import PIL; import pytesseract; import playsound; import watchdog; import ultralytics; import tkinter; print('✅ 所有依赖包导入成功')" >> test_windows_setup.bat
+echo echo Testing Windows environment... >> test_windows_setup.bat
+echo python -c "import cv2; import numpy; import psutil; import pyautogui; import requests; import yaml; import PIL; import pytesseract; import playsound; import watchdog; import ultralytics; import tkinter; print('OK: All dependencies imported successfully')" >> test_windows_setup.bat
 echo pause >> test_windows_setup.bat
 
 echo.
-echo 🎉 Windows环境安装完成！
+echo Windows environment setup completed!
 echo.
-echo 📋 下一步操作:
-echo   1. 运行 test_windows_setup.bat 测试环境
-echo   2. 运行 build_windows_app.bat 构建应用程序
-echo   3. 在release目录找到绿色版应用程序
+echo Next steps:
+echo   1. Run test_windows_setup.bat to test environment
+echo   2. Run build_windows_app.bat to build application
+echo   3. Find portable application in release directory
 echo.
-echo 💡 提示:
-echo   - 如果Tesseract未安装，OCR功能可能不可用
-echo   - 首次运行可能需要允许防火墙访问
-echo   - 建议在虚拟机中测试后再部署到生产环境
+echo TIPS:
+echo   - If Tesseract not installed, OCR may not work
+echo   - First run may need firewall access
+echo   - Test in VM before production deployment
 echo.
 pause 
