@@ -55,7 +55,7 @@ python -c "from transformers import AutoTokenizer, AutoModel; AutoTokenizer.from
 ```yaml
 chat_app:
   name: "Mango"  # 聊天应用名称
-  target_contacts: ["测试", "js_wbmalia-研发部助理"]  # 目标联系人
+  target_contacts: ["测试", "研发部助理"]  # 目标联系人
 
 monitor:
   check_interval: 3    # 检测间隔（秒）
