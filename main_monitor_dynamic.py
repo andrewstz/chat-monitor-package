@@ -258,17 +258,14 @@ def play_sound(sound_type="default"):
             sound_file = get_resource_path(os.path.basename(sound_file_name))
             if sound_file:
                 if system == "Windows":
-                    # Windows - 使用playsound库
+                    # Windows - 使用PowerShell播放
                     try:
-                        from playsound import playsound
-                        playsound(sound_file, block=False)
-                        debug_log(f"[SOUND] ✅ Windows playsound播放成功: {sound_file}")
-                        return
-                    except ImportError:
-                        # 备用方案：PowerShell
                         subprocess.run(['powershell', '-c', f'(New-Object Media.SoundPlayer "{sound_file}").PlaySync()'], 
                                      capture_output=True, check=True)
                         debug_log(f"[SOUND] ✅ Windows PowerShell播放成功: {sound_file}")
+                        return
+                    except Exception as e:
+                        debug_log(f"[SOUND] ❌ Windows PowerShell播放失败: {e}")
                         return
                 elif system == "Darwin":  # macOS
                     # 只使用 afplay 播放指定音频文件

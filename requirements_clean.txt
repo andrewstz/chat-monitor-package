@@ -11,8 +11,8 @@ Pillow>=10.0.0
 # OCR相关
 pytesseract>=0.3.10
 
-# 音频播放支持
-playsound>=1.2.2
+# 音频播放支持（已移除playsound，使用系统命令播放）
+# playsound>=1.2.2  # 已移除，使用系统命令替代
 
 # 可选：YOLO模型支持（如果用户需要）
 # ultralytics>=8.0.0

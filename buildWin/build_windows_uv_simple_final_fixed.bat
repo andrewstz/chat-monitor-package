@@ -4,16 +4,17 @@ setlocal enabledelayedexpansion
 
 echo Building Windows application (Fixed Version - No playsound dependency)...
 
-:: Check if UV environment exists
-if not exist ".venv" (
-    echo ERROR: UV environment not found!
-    echo Please run setup_windows_uv_simple.bat first
+:: Check if UV environment exists in parent directory
+if not exist "..\.venv" (
+    echo ERROR: UV environment not found in parent directory!
+    echo Please run setup_windows_uv_simple_fixed.bat first
+    echo TIP: UV environment should be in the parent directory
     pause
     exit /b 1
 )
 
-:: Activate UV environment
-call .venv\Scripts\activate.bat
+:: Activate UV environment from parent directory
+call ..\.venv\Scripts\activate.bat
 
 :: Install core dependencies directly without pyproject
 echo Installing core dependencies...
@@ -29,13 +30,13 @@ uv run pyinstaller ^
     --onefile ^
     --windowed ^
     --name ChatMonitor ^
-    --add-data "sounds;sounds" ^
-    --add-data "models;models" ^
-    --add-data "config_with_yolo.yaml;." ^
-    --add-data "audio_alternative.py;." ^
-    --add-data "fuzzy_matcher.py;." ^
-    --add-data "network_monitor.py;." ^
-    --add-data "status_monitor.py;." ^
+    --add-data "..\sounds;sounds" ^
+    --add-data "..\models;models" ^
+    --add-data "..\config_with_yolo.yaml;." ^
+    --add-data "..\audio_alternative.py;." ^
+    --add-data "..\fuzzy_matcher.py;." ^
+    --add-data "..\network_monitor.py;." ^
+    --add-data "..\status_monitor.py;." ^
     --hidden-import cv2 ^
     --hidden-import ultralytics ^
     --hidden-import PIL ^
@@ -50,7 +51,7 @@ uv run pyinstaller ^
     --hidden-import subprocess ^
     --hidden-import platform ^
     --exclude-module playsound ^
-    main_monitor_gui_app.py
+    ..\main_monitor_gui_app.py
 
 :: Check if build was successful
 if exist "dist\ChatMonitor.exe" (
@@ -65,10 +66,10 @@ if exist "dist\ChatMonitor.exe" (
     
     :: Copy executable and resources
     copy "dist\ChatMonitor.exe" "dist\ChatMonitor\"
-    if exist "sounds" xcopy "sounds" "dist\ChatMonitor\sounds\" /E /I /Y
-    if exist "models" xcopy "models" "dist\ChatMonitor\models\" /E /I /Y
-    if exist "config_with_yolo.yaml" copy "config_with_yolo.yaml" "dist\ChatMonitor\"
-    if exist "audio_alternative.py" copy "audio_alternative.py" "dist\ChatMonitor\"
+    if exist "..\sounds" xcopy "..\sounds" "dist\ChatMonitor\sounds\" /E /I /Y
+    if exist "..\models" xcopy "..\models" "dist\ChatMonitor\models\" /E /I /Y
+    if exist "..\config_with_yolo.yaml" copy "..\config_with_yolo.yaml" "dist\ChatMonitor\"
+    if exist "..\audio_alternative.py" copy "..\audio_alternative.py" "dist\ChatMonitor\"
     
     :: Create portable ZIP
     if exist "ChatMonitor_Windows_Portable.zip" del "ChatMonitor_Windows_Portable.zip"

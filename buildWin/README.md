@@ -57,22 +57,31 @@
 
 ## 🚀 使用流程
 
-### 1. 环境设置
+### 方法1: 无playsound版本（推荐）
 ```bash
-# 推荐使用简化版设置
+# 1. 环境设置（无playsound）
+setup_windows_uv_no_playsound.bat
+
+# 2. 构建应用（无playsound）
+build_windows_uv_no_playsound.bat
+```
+
+### 方法2: 代理版本（如果网络慢）
+```bash
+# 1. 环境设置（使用代理）
+setup_windows_uv_simple_fixed_host_proxy.bat
+
+# 2. 构建应用（使用代理）
+build_windows_uv_simple_final_fixed_host_proxy.bat
+```
+
+### 方法3: 传统版本（如果上述方法失败）
+```bash
+# 1. 环境设置
 setup_windows_uv_simple.bat
-```
 
-### 2. 构建应用
-```bash
-# 推荐使用修复版构建脚本
+# 2. 构建应用
 build_windows_uv_simple_final_fixed.bat
-```
-
-### 3. 如果遇到音频问题
-```bash
-# 运行修复脚本
-fix_playsound_issue.bat
 ```
 
 ## 📋 构建结果

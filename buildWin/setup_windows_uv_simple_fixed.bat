@@ -18,6 +18,19 @@ if errorlevel 1 (
 echo UV Version:
 uv --version
 
+:: Check if UV environment exists in parent directory
+echo Checking UV environment in parent directory...
+if exist "..\.venv" (
+    echo OK: Found existing UV environment in parent directory
+    echo Using existing environment: ..\.venv
+) else (
+    echo Creating UV environment in parent directory...
+    cd ..
+    uv init --no-readme
+    cd buildWin
+    echo OK: Created UV environment in parent directory
+)
+
 :: Check required files (look in parent directory)
 echo Checking required files...
 set REQUIRED_FILES=main_monitor_gui_app.py config_with_yolo.yaml fuzzy_matcher.py config_manager.py network_monitor.py
@@ -33,17 +46,9 @@ for %%f in (%REQUIRED_FILES%) do (
     echo   OK: ..\%%f
 )
 
-:: Create uv project if not exists
-if not exist "pyproject.toml" (
-    echo Creating uv project...
-    uv init --no-readme
-    echo OK: Created uv project
-) else (
-    echo OK: UV project already exists
-)
-
-:: Install core dependencies (NO playsound)
-echo Installing core dependencies with uv...
+:: Install core dependencies using parent directory's UV environment
+echo Installing core dependencies with uv (using parent environment)...
+cd ..
 uv add pyinstaller
 uv add ultralytics
 uv add opencv-python
@@ -55,6 +60,7 @@ uv add requests
 uv add pyyaml
 uv add pytesseract
 uv add watchdog
+cd buildWin
 
 echo OK: Core dependencies installed
 
@@ -75,21 +81,25 @@ if exist "..\assets\icons\icon.png" (
 
 :: Check Tesseract
 echo Checking Tesseract OCR...
-python -c "import pytesseract; print('Tesseract path:', pytesseract.get_tesseract_version())" 2>nul
+cd ..
+uv run python -c "import pytesseract; print('Tesseract path:', pytesseract.get_tesseract_version())" 2>nul
 if errorlevel 1 (
     echo WARNING: Tesseract not installed or configured
     echo TIP: Install Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki
     echo TIP: Or download pre-compiled version
 )
+cd buildWin
 
 :: Create test script
 echo Creating test script...
 echo @echo off > test_windows_uv_simple_fixed.bat
 echo echo Testing Windows UV environment (Fixed Version)... >> test_windows_uv_simple_fixed.bat
+echo cd .. >> test_windows_uv_simple_fixed.bat
 echo uv run python -c "import cv2; import numpy; import psutil; import pyautogui; import requests; import yaml; import PIL; import pytesseract; import watchdog; import ultralytics; import tkinter; print('OK: Core dependencies imported successfully')" >> test_windows_uv_simple_fixed.bat
 echo echo Audio will use PowerShell commands >> test_windows_uv_simple_fixed.bat
 echo echo Testing alternative audio system... >> test_windows_uv_simple_fixed.bat
-echo uv run python ..\audio_alternative.py >> test_windows_uv_simple_fixed.bat
+echo uv run python audio_alternative.py >> test_windows_uv_simple_fixed.bat
+echo cd buildWin >> test_windows_uv_simple_fixed.bat
 
 :: Create build script
 echo Creating build script...
@@ -99,16 +109,17 @@ echo setlocal enabledelayedexpansion >> build_windows_uv_simple_final_fixed.bat
 echo. >> build_windows_uv_simple_final_fixed.bat
 echo echo Building Windows application (Fixed Version - No playsound dependency)... >> build_windows_uv_simple_final_fixed.bat
 echo. >> build_windows_uv_simple_final_fixed.bat
-echo :: Check if UV environment exists >> build_windows_uv_simple_final_fixed.bat
-echo if not exist ".venv" ( >> build_windows_uv_simple_final_fixed.bat
-echo     echo ERROR: UV environment not found! >> build_windows_uv_simple_final_fixed.bat
+echo :: Check if UV environment exists in parent directory >> build_windows_uv_simple_final_fixed.bat
+echo if not exist "..\.venv" ( >> build_windows_uv_simple_final_fixed.bat
+echo     echo ERROR: UV environment not found in parent directory! >> build_windows_uv_simple_final_fixed.bat
 echo     echo Please run setup_windows_uv_simple_fixed.bat first >> build_windows_uv_simple_final_fixed.bat
+echo     echo TIP: UV environment should be in the parent directory >> build_windows_uv_simple_final_fixed.bat
 echo     pause >> build_windows_uv_simple_final_fixed.bat
 echo     exit /b 1 >> build_windows_uv_simple_final_fixed.bat
 echo ) >> build_windows_uv_simple_final_fixed.bat
 echo. >> build_windows_uv_simple_final_fixed.bat
-echo :: Activate UV environment >> build_windows_uv_simple_final_fixed.bat
-echo call .venv\Scripts\activate.bat >> build_windows_uv_simple_final_fixed.bat
+echo :: Activate UV environment from parent directory >> build_windows_uv_simple_final_fixed.bat
+echo call ..\.venv\Scripts\activate.bat >> build_windows_uv_simple_final_fixed.bat
 echo. >> build_windows_uv_simple_final_fixed.bat
 echo :: Install core dependencies directly without pyproject >> build_windows_uv_simple_final_fixed.bat
 echo echo Installing core dependencies... >> build_windows_uv_simple_final_fixed.bat
@@ -157,7 +168,7 @@ echo     echo Creating portable package... >> build_windows_uv_simple_final_fixe
 echo     echo. >> build_windows_uv_simple_final_fixed.bat
 echo     :: Create dist directory for portable package >> build_windows_uv_simple_final_fixed.bat
 echo     if not exist "dist\ChatMonitor" mkdir "dist\ChatMonitor" >> build_windows_uv_simple_final_fixed.bat
-echo     echo. >> build_windows_uv_simple_final_fixed.bat
+echo     echo. >> build_windows_uv_simple_final_final_fixed.bat
 echo     :: Copy executable and resources >> build_windows_uv_simple_final_fixed.bat
 echo     copy "dist\ChatMonitor.exe" "dist\ChatMonitor\" >> build_windows_uv_simple_final_fixed.bat
 echo     if exist "..\sounds" xcopy "..\sounds" "dist\ChatMonitor\sounds\" /E /I /Y >> build_windows_uv_simple_final_fixed.bat
@@ -202,4 +213,6 @@ echo - Isolated environment management
 echo - Compatible with existing pip packages
 echo.
 echo Note: Audio features will use PowerShell commands (no playsound dependency)
+echo.
+echo TIP: Using existing UV environment from parent directory
 pause 
