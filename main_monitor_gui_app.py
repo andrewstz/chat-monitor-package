@@ -867,12 +867,12 @@ class ChatMonitorGUI:
                 contacts_str = ", ".join(default_contacts)
                 text_widget.delete(1.0, tk.END)
                 text_widget.insert(1.0, contacts_str)
-                self.update_status_label(status_label, f"已加载 {len(default_contacts)} 个默认发信人")
+                self.update_settings_status_label(status_label, f"已加载 {len(default_contacts)} 个默认发信人")
             else:
-                self.update_status_label(status_label, "未找到默认发信人配置")
+                self.update_settings_status_label(status_label, "未找到默认发信人配置")
                 
         except Exception as e:
-            self.update_status_label(status_label, f"加载配置文件失败: {str(e)}")
+            self.update_settings_status_label(status_label, f"加载配置文件失败: {str(e)}")
     
     def parse_contacts(self, text):
         """解析发信人文本，支持中英文逗号"""
@@ -933,7 +933,7 @@ class ChatMonitorGUI:
             if FUZZY_MATCHER and hasattr(FUZZY_MATCHER, 'target_contacts'):
                 debug_log(f"[CONTACTS] FUZZY_MATCHER已更新: {FUZZY_MATCHER.target_contacts}")
             
-            self.update_status_label(status_label, f"已保存 {len(contacts)} 个发信人: {', '.join(contacts)}")
+            self.update_settings_status_label(status_label, f"已保存 {len(contacts)} 个发信人: {', '.join(contacts)}")
             self.safe_add_log_message(f"✅ 发信人设置已更新: {', '.join(contacts)}")
             
             from tkinter import messagebox
@@ -944,17 +944,17 @@ class ChatMonitorGUI:
             
         except Exception as e:
             error_msg = f"保存配置文件失败: {str(e)}"
-            self.update_status_label(status_label, error_msg)
+            self.update_settings_status_label(status_label, error_msg)
             from tkinter import messagebox
             messagebox.showerror("错误", error_msg)
     
     def clear_contacts_text(self, text_widget, status_label):
         """清空发信人文本框"""
         text_widget.delete(1.0, tk.END)
-        self.update_status_label(status_label, "已清空发信人列表")
+        self.update_settings_status_label(status_label, "已清空发信人列表")
     
-    def update_status_label(self, status_label, message):
-        """更新状态标签"""
+    def update_settings_status_label(self, status_label, message):
+        """更新设置窗口状态标签"""
         status_label.config(text=message)
         status_label.winfo_toplevel().update_idletasks()
     
