@@ -634,3 +634,58 @@ build_macos_app_with_icon.sh: 推荐使用 - 整合版本
 推荐使用 build_macos_app_with_icon.sh，因为它结合了完整功能和图标支持！
 
 
+
+# main_monitor_gui_app 和 main_monitor_gui有啥区别
+1. 用途和定位
+main_monitor_gui.py
+开发调试版本
+用于日常开发和测试
+直接运行，无需打包
+适合开发者使用
+main_monitor_gui_app.py
+打包专用版本
+专门为打包成 .app 文件设计
+包含打包后的特殊处理逻辑
+适合最终用户使用
+2. 核心功能差异
+调试和日志系统
+main_monitor_gui_app.py 独有的调试功能
+def debug_log(msg):
+    try:
+        with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"[{timestamp}] {msg}\n")
+    except Exception as e:
+        pass
+
+def clear_debug_log():
+    """清空调试日志文件"""
+3. 特殊功能对比
+main_monitor_gui_app.py 独有功能：
+LoadingWindow 加载窗口
+Tesseract 路径自动配置 configure_tesseract
+模型路径解析 _resolve_model_path
+安全日志记录 safe_add_log_message
+6. 错误处理
+main_monitor_gui_app.py 更完善的错误处理
+7. 使用建议
+开发阶段
+使用 main_monitor_gui.py
+快速调试和测试
+直接运行，无需额外配置
+打包发布
+使用 main_monitor_gui_app.py
+包含完整的错误处理和日志
+支持打包后的特殊环境
+8. 主要改进点
+main_monitor_gui_app.py 相比 main_monitor_gui.py 的改进：
+✅ 启动加载界面 - 用户体验更好
+✅ 自动环境配置 - 适应打包后的环境
+✅ 详细日志记录 - 便于问题排查
+✅ 线程安全处理 - 避免GUI冲突
+✅ 路径自动解析 - 支持相对路径
+✅ 错误恢复机制 - 更稳定的运行
+
+
+
+
