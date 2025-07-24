@@ -252,6 +252,30 @@ class ChatMonitorGUI:
         )
         self.close_button.grid(row=0, column=4)
         
+        # 监控开关框架
+        self.switch_frame = ttk.LabelFrame(self.main_frame, text="监控开关", padding="5")
+        self.switch_frame.grid(row=4, column=0, pady=(10, 0), sticky="ew")
+        
+        # 应用监控开关
+        self.app_monitor_var = tk.BooleanVar(value=True)
+        self.app_monitor_check = ttk.Checkbutton(
+            self.switch_frame,
+            text="应用监控",
+            variable=self.app_monitor_var,
+            command=self.on_app_monitor_toggle
+        )
+        self.app_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # 网络监控开关
+        self.network_monitor_var = tk.BooleanVar(value=True)
+        self.network_monitor_check = ttk.Checkbutton(
+            self.switch_frame,
+            text="网络监控",
+            variable=self.network_monitor_var,
+            command=self.on_network_monitor_toggle
+        )
+        self.network_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
+        
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.close_program)
         
@@ -266,8 +290,18 @@ class ChatMonitorGUI:
         self.last_reply_time = 0
         self.detection_count = 0
         
+        # 监控开关状态
+        self.app_monitor_enabled = True
+        self.network_monitor_enabled = True
+        
+        # 网络监控器
+        self.network_monitor = None
+        
         # 初始化配置
         self.init_monitoring()
+        
+        # 更新初始状态
+        self.update_status_label()
     
     def set_window_icon(self):
         """设置窗口图标"""
@@ -479,9 +513,9 @@ class ChatMonitorGUI:
             self.monitor_thread = threading.Thread(target=self.run_monitor, daemon=True)
             self.monitor_thread.start()
             
-            self.status_label.config(text="状态: 监控已启动")
             self.start_stop_button.config(text="停止监控")
             self.add_log_message("监控已启动")
+            self.update_status_label()
     
     def run_monitor(self):
         """运行监控器"""
@@ -521,80 +555,90 @@ class ChatMonitorGUI:
             
             while self.monitoring:
                 try:
-                    # 检查进程
-                    if not check_process(app_name):
-                        self.safe_add_log_message(f"未找到 {app_name} 进程")
-                        # 添加进程退出的声音提醒
+                    # 检查是否有任何监控启用
+                    if not self.app_monitor_enabled and not self.network_monitor_enabled:
+                        time.sleep(check_interval)
+                        continue
+                    
+                    # 网络监控检查（根据开关状态）
+                    if self.network_monitor_enabled:
                         try:
-                            play_sound("error")
-                            self.safe_add_log_message("🔊 播放进程退出提醒音")
+                            from main_monitor_dynamic import check_network_with_alert
+                            check_network_with_alert()
                         except Exception as e:
-                            self.safe_add_log_message(f"❌ 进程退出提醒音播放失败: {str(e)}")
-                        time.sleep(check_interval)
-                        continue
+                            self.safe_add_log_message(f"网络监控检查失败: {str(e)}")
+                    else:
+                        # 网络监控关闭时，减少日志输出
+                        if self.detection_count % 20 == 0:  # 每20次检测输出一次状态
+                            self.safe_add_log_message("网络监控已关闭")
                     
-                    # 网络监控检查
-                    try:
-                        from main_monitor_dynamic import check_network_with_alert
-                        check_network_with_alert()
-                    except Exception as e:
-                        self.safe_add_log_message(f"网络监控检查失败: {str(e)}")
-                    
-                    # 截图
-                    img = screenshot()
-                    if img is None:
-                        self.safe_add_log_message("截图失败")
-                        time.sleep(check_interval)
-                        continue
-                    
-                    self.detection_count += 1
-                    results = []
-                    
-                    # YOLO检测
-                    if self.yolo_manager and self.yolo_manager.initialized:
-                        results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
-                        if debug_verbose and results:
-                            self.safe_add_log_message(f"检测到 {len(results)} 个弹窗")
-                    
-                    # 处理检测结果
-                    for result in results:
-                        text = result['text']
-                        # 重新获取最新的FUZZY_MATCHER（确保获取到最新的联系人） 要不然和保存那里的作用域都不一样
-                        from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
-                        if text and current_fuzzy_matcher:
-                            # 添加调试信息
-                            self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
-                            
-                            first_line = text.splitlines()[0] if text else ""
-                            self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
-                            
-                            # 检查所有行文本
-                            # all_lines = text.splitlines()
-                            # self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
-                            
-                            # 检查第一行
-                            match_result = current_fuzzy_matcher.match_sender(first_line)
-                            if match_result:
-                                contact, sender, similarity = match_result
-                                # {contact} 
-                                self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
-                                now = time.time()
-                                if now - self.last_reply_time > reply_wait:
-                                    self.safe_add_detection_result(
-                                        app_name, 
-                                        f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
-                                        result.get('confidence'),
-                                        "YOLO+OCR"
-                                    )
-                                    # 添加声音播放调试信息
-                                    self.safe_add_log_message("🔊 播放联系提醒音...")
-                                    try:
+                    # 应用监控检查（根据开关状态）
+                    if self.app_monitor_enabled:
+                        # 检查进程
+                        if not check_process(app_name):
+                            self.safe_add_log_message(f"未找到 {app_name} 进程")
+                            # 添加进程退出的声音提醒
+                            try:
+                                play_sound("error")
+                                self.safe_add_log_message("🔊 播放进程退出提醒音")
+                            except Exception as e:
+                                self.safe_add_log_message(f"❌ 进程退出提醒音播放失败: {str(e)}")
+                            time.sleep(check_interval)
+                            continue
+                        
+                        # 截图
+                        img = screenshot()
+                        if img is None:
+                            self.safe_add_log_message("截图失败")
+                            time.sleep(check_interval)
+                            continue
+                        
+                        self.detection_count += 1
+                        results = []
+                        
+                        # YOLO检测
+                        if self.yolo_manager and self.yolo_manager.initialized:
+                            results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
+                            if debug_verbose and results:
+                                self.safe_add_log_message(f"检测到 {len(results)} 个弹窗")
+                        
+                        # 处理检测结果
+                        for result in results:
+                            text = result['text']
+                            # 重新获取最新的FUZZY_MATCHER（确保获取到最新的联系人） 要不然和保存那里的作用域都不一样
+                            from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
+                            if text and current_fuzzy_matcher:
+                                # 添加调试信息
+                                self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
+                                
+                                first_line = text.splitlines()[0] if text else ""
+                                self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
+                                
+                                # 检查所有行文本
+                                # all_lines = text.splitlines()
+                                # self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
+                                
+                                # 检查第一行
+                                match_result = current_fuzzy_matcher.match_sender(first_line)
+                                if match_result:
+                                    contact, sender, similarity = match_result
+                                    # {contact} 
+                                    self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
+                                    now = time.time()
+                                    if now - self.last_reply_time > reply_wait:
+                                        self.safe_add_detection_result(
+                                            app_name, 
+                                            f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
+                                            result.get('confidence'),
+                                            "YOLO+OCR"
+                                        )
                                         play_sound("contact")
-                                        self.safe_add_log_message("✅ 声音播放完成")
-                                    except Exception as e:
-                                        self.safe_add_log_message(f"❌ 声音播放失败: {str(e)}")
-                                    self.last_reply_time = now
-                                    break
+                                        self.last_reply_time = now
+                                        break
+                    else:
+                        # 应用监控关闭时，跳过截图和检测
+                        time.sleep(check_interval)
+                        continue
                     
                     time.sleep(check_interval)
                     
@@ -615,9 +659,9 @@ class ChatMonitorGUI:
     def stop_monitoring(self):
         """停止监控"""
         self.monitoring = False
-        self.status_label.config(text="状态: 监控已停止")
         self.start_stop_button.config(text="开始监控")
         self.add_log_message("监控已停止")
+        self.update_status_label()
     
     def add_detection_result(self, app_name, content, confidence=None, detection_method=None):
         """添加检测结果到显示区"""
@@ -1125,6 +1169,36 @@ class ChatMonitorGUI:
     def update_network_status_label(self, message):
         """更新网络设置状态标签"""
         self.network_status_label.config(text=message)
+    
+    def update_status_label(self):
+        """更新主状态标签，显示监控开关状态"""
+        try:
+            app_status = "开启" if self.app_monitor_enabled else "关闭"
+            network_status = "开启" if self.network_monitor_enabled else "关闭"
+            monitoring_status = "运行中" if self.monitoring else "已停止"
+            
+            status_text = f"状态: {monitoring_status} | 应用监控: {app_status} | 网络监控: {network_status}"
+            self.status_label.config(text=status_text)
+        except Exception as e:
+            debug_log(f"[STATUS] 更新状态标签失败: {str(e)}")
+    
+    def on_app_monitor_toggle(self):
+        """应用监控开关状态改变时触发"""
+        self.app_monitor_enabled = self.app_monitor_var.get()
+        debug_log(f"[SWITCH] 应用监控开关状态: {self.app_monitor_enabled}")
+        self.safe_add_log_message(f"应用监控开关状态: {'开启' if self.app_monitor_enabled else '关闭'}")
+        
+        # 更新状态标签
+        self.update_status_label()
+    
+    def on_network_monitor_toggle(self):
+        """网络监控开关状态改变时触发"""
+        self.network_monitor_enabled = self.network_monitor_var.get()
+        debug_log(f"[SWITCH] 网络监控开关状态: {self.network_monitor_enabled}")
+        self.safe_add_log_message(f"网络监控开关状态: {'开启' if self.network_monitor_enabled else '关闭'}")
+        
+        # 更新状态标签
+        self.update_status_label()
     
     def close_program(self):
         """关闭程序"""
