@@ -545,11 +545,19 @@ class ChatMonitorGUI:
                 self.safe_add_log_message(f"⚠️ 屏幕录制权限检查失败: {str(e)}")
                 return
             
-            # 检查目标应用进程
+            # 检查目标应用进程（启动时检查，但不阻止程序运行）
             if not check_process(app_name):
                 self.safe_add_log_message(f"⚠️ 未找到目标应用: {app_name}")
                 self.safe_add_log_message("请确保目标应用正在运行")
-                return
+                # 播放进程不存在的提醒音
+                try:
+                    play_sound("error")
+                    self.safe_add_log_message("🔊 播放进程不存在提醒音")
+                except Exception as e:
+                    self.safe_add_log_message(f"❌ 进程不存在提醒音播放失败: {str(e)}")
+                self.safe_add_log_message("程序将继续运行，等待目标应用启动...")
+            else:
+                self.safe_add_log_message(f"✅ 目标应用已运行: {app_name}")
             
             self.safe_add_log_message(f"✅ 开始监控应用: {app_name}")
             
