@@ -14,8 +14,8 @@ chat_app:
     min_length: 2  # 最小匹配长度
 
 monitor:
-  check_interval: 3
-  reply_wait: 60
+  check_interval: 1
+  reply_wait: 3
 
 # YOLO模型配置
 yolo:
