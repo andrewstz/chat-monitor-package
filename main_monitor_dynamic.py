@@ -333,6 +333,7 @@ def check_network_with_alert():
     # 从配置中获取参数
     conf = get_config()
     network_conf = conf.get("network_monitor", {})
+    check_interval = network_conf.get("check_interval", 10)  # 检测间隔
     consecutive_failures = network_conf.get("consecutive_failures", 3)  # 默认3次
     timeout = network_conf.get("timeout", 5)  # 网络请求超时时间
     
@@ -354,15 +355,18 @@ def check_network_with_alert():
         
         # 检查是否达到连续失败阈值
         if network_failure_count >= consecutive_failures:
-            # 如果已经发送过警报，检查是否需要重新发送（每30秒重新发送一次）
+            # 计算重复警报间隔：检测间隔 × 连续失败阈值
+            repeat_interval = check_interval * consecutive_failures
+            
+            # 如果已经发送过警报，检查是否需要重新发送
             if network_alert_sent:
                 time_since_last_alert = current_time - last_network_check_time
-                if time_since_last_alert >= 30:  # 30秒后重新发送警报
+                if time_since_last_alert >= repeat_interval:
                     print(f"🚨 网络异常警报（重复） - 连续失败{network_failure_count}次")
                     play_sound("warning")
                     last_network_check_time = current_time
                 else:
-                    remaining = 30 - time_since_last_alert
+                    remaining = repeat_interval - time_since_last_alert
                     print(f"⏰ 距离下次警报还有 {remaining:.1f} 秒")
             else:
                 # 首次发送警报

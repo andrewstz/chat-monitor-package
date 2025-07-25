@@ -67,8 +67,8 @@ class NetworkSettingsWindow:
 • 连续失败阈值：触发警报前允许的连续失败次数
   推荐值：2-5次，值越大越稳定但响应越慢
 
-• 容错时间：连续失败后等待的时间（分钟）
-  推荐值：0.1-1分钟，值越小响应越快
+注意：重复警报间隔 = 检测间隔 × 连续失败阈值
+例如：10秒间隔 × 3次失败 = 30秒重复警报
 
 当前设置："""
         desc_label = ttk.Label(main_frame, text=description_text, justify=tk.LEFT, font=("Arial", 10))
@@ -96,12 +96,6 @@ class NetworkSettingsWindow:
         self.consecutive_failures_var = tk.StringVar()
         consecutive_failures_entry = ttk.Entry(params_frame, textvariable=self.consecutive_failures_var, width=15)
         consecutive_failures_entry.grid(row=2, column=1, padx=(10, 0), pady=5, sticky="w")
-        
-        # 容错时间
-        ttk.Label(params_frame, text="容错时间（分钟）:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.tolerance_minutes_var = tk.StringVar()
-        tolerance_minutes_entry = ttk.Entry(params_frame, textvariable=self.tolerance_minutes_var, width=15)
-        tolerance_minutes_entry.grid(row=3, column=1, padx=(10, 0), pady=5, sticky="w")
         
         # 状态标签
         self.network_status_label = ttk.Label(main_frame, text="", font=("Arial", 10))
@@ -152,7 +146,6 @@ class NetworkSettingsWindow:
             self.check_interval_var.set(str(network_config.get("check_interval", 10)))
             self.timeout_var.set(str(network_config.get("timeout", 5)))
             self.consecutive_failures_var.set(str(network_config.get("consecutive_failures", 3)))
-            self.tolerance_minutes_var.set(str(network_config.get("tolerance_minutes", 0.1)))
             
             self.update_network_status_label("✅ 已加载当前设置")
             
@@ -166,10 +159,9 @@ class NetworkSettingsWindow:
             check_interval = float(self.check_interval_var.get())
             timeout = float(self.timeout_var.get())
             consecutive_failures = int(self.consecutive_failures_var.get())
-            tolerance_minutes = float(self.tolerance_minutes_var.get())
             
             # 验证输入
-            if check_interval < 1 or timeout < 1 or consecutive_failures < 1 or tolerance_minutes < 0.01:
+            if check_interval < 1 or timeout < 1 or consecutive_failures < 1:
                 self.update_network_status_label("❌ 参数值无效，请检查输入")
                 return
             
@@ -180,8 +172,7 @@ class NetworkSettingsWindow:
             config_manager.update_network_config({
                 "check_interval": check_interval,
                 "timeout": timeout,
-                "consecutive_failures": consecutive_failures,
-                "tolerance_minutes": tolerance_minutes
+                "consecutive_failures": consecutive_failures
             })
             
             # 更新状态
@@ -206,14 +197,12 @@ class NetworkSettingsWindow:
             default_values = {
                 "check_interval": 10,
                 "timeout": 5,
-                "consecutive_failures": 3,
-                "tolerance_minutes": 0.1
+                "consecutive_failures": 3
             }
             
             self.check_interval_var.set(str(default_values["check_interval"]))
             self.timeout_var.set(str(default_values["timeout"]))
             self.consecutive_failures_var.set(str(default_values["consecutive_failures"]))
-            self.tolerance_minutes_var.set(str(default_values["tolerance_minutes"]))
             
             self.update_network_status_label("✅ 已恢复默认设置")
             
