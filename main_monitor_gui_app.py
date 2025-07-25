@@ -594,8 +594,20 @@ class ChatMonitorGUI:
                     # 1. 网络监控（独立运行）
                     if self.network_monitor_enabled:
                         try:
-                            from main_monitor_dynamic import check_network_with_alert
-                            check_network_with_alert()
+                            # 获取网络监控配置
+                            conf = get_config_manager().load_config()
+                            network_conf = conf.get("network_monitor", {})
+                            network_check_interval = network_conf.get("check_interval", 10)
+                            
+                            # 使用独立的网络监控间隔，而不是跟随主循环
+                            current_time = time.time()
+                            if not hasattr(self, 'last_network_check_time'):
+                                self.last_network_check_time = 0
+                            
+                            if current_time - self.last_network_check_time >= network_check_interval:
+                                from main_monitor_dynamic import check_network_with_alert
+                                check_network_with_alert()
+                                self.last_network_check_time = current_time
                         except Exception as e:
                             self.safe_add_log_message(f"网络监控检查失败: {str(e)}")
                     
