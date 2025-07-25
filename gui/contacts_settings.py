@@ -6,7 +6,7 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-import config_manager
+from config_manager import get_config_manager
 
 class ContactsSettingsWindow:
     def __init__(self, parent, on_save_callback=None):
@@ -95,14 +95,6 @@ class ContactsSettingsWindow:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=4, column=0, pady=(0, 20), sticky="ew")
         
-        # 加载按钮
-        load_button = ttk.Button(
-            button_frame,
-            text="加载联系人",
-            command=lambda: self.load_contacts_to_text(self.text_widget, self.status_label)
-        )
-        load_button.pack(side=tk.LEFT, padx=(0, 10))
-        
         # 保存按钮
         save_button = ttk.Button(
             button_frame,
@@ -138,6 +130,7 @@ class ContactsSettingsWindow:
         """加载联系人到文本框"""
         try:
             # 从配置文件加载联系人
+            config_manager = get_config_manager()
             conf = config_manager.load_config()
             target_contacts = conf.get("chat_app", {}).get("target_contacts", [])
             
@@ -146,7 +139,9 @@ class ContactsSettingsWindow:
             
             # 插入联系人
             if target_contacts:
-                text_widget.insert("1.0", "\n".join(target_contacts))
+                # 使用换行分隔显示联系人（每行一个）
+                contacts_text = "\n".join(target_contacts)
+                text_widget.insert("1.0", contacts_text)
                 self.update_settings_status_label(status_label, f"✅ 已加载 {len(target_contacts)} 个联系人")
             else:
                 self.update_settings_status_label(status_label, "⚠️ 未找到联系人，请添加联系人")
@@ -157,12 +152,22 @@ class ContactsSettingsWindow:
     def parse_contacts(self, text):
         """解析联系人文本"""
         contacts = []
-        lines = text.strip().split('\n')
+        # 优先支持换行分隔，也支持逗号分隔
+        text = text.strip()
+        lines = text.split('\n')
         
         for line in lines:
             line = line.strip()
             if line:  # 忽略空行
-                contacts.append(line)
+                # 如果行内包含逗号，则按逗号分割
+                if ',' in line:
+                    items = line.split(',')
+                    for item in items:
+                        item = item.strip()
+                        if item:  # 忽略空项
+                            contacts.append(item)
+                else:
+                    contacts.append(line)
         
         return contacts
     
@@ -184,6 +189,7 @@ class ContactsSettingsWindow:
                 return
             
             # 保存到配置文件
+            config_manager = get_config_manager()
             conf = config_manager.load_config()
             if "chat_app" not in conf:
                 conf["chat_app"] = {}
@@ -193,6 +199,10 @@ class ContactsSettingsWindow:
             
             # 更新状态
             self.update_settings_status_label(status_label, f"✅ 已保存 {len(contacts)} 个联系人")
+            
+            # 显示确认弹框
+            import tkinter.messagebox as messagebox
+            messagebox.showinfo("保存成功", f"已成功保存 {len(contacts)} 个联系人！")
             
             # 调用回调函数
             if self.on_save_callback:

@@ -196,6 +196,22 @@ class ConfigManager:
             "tolerance_minutes": network_conf.get("tolerance_minutes", 0.1)
         }
     
+    def save_config(self, config: Dict[str, Any]) -> bool:
+        """保存配置到文件"""
+        try:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+            
+            # 重新加载配置
+            self.load_config()
+            
+            print(f"✅ 配置已保存: {self.config_path}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ 保存配置失败: {e}")
+            return False
+
     def update_network_config(self, new_config: Dict[str, Any]) -> bool:
         """更新网络监控配置"""
         try:

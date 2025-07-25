@@ -20,6 +20,9 @@ from main_monitor_dynamic import (
     config_manager
 )
 
+# 导入配置管理器
+from config_manager import get_config_manager
+
 # 导入GUI设置模块
 from gui.contacts_settings import ContactsSettingsWindow
 from gui.network_settings import NetworkSettingsWindow
@@ -611,77 +614,99 @@ class ChatMonitorGUI:
                             continue
                     
                     # 3. 弹框监控（默认运行）
-                        # 读取弹框设置
-                        try:
-                            conf = config_manager.load_config()
-                            monitor_conf = conf.get("monitor", {})
-                            popup_conf = conf.get("popup_settings", {})
+                    # 读取弹框设置
+                    try:
+                        conf = config_manager.load_config()
+                        monitor_conf = conf.get("monitor", {})
+                        popup_conf = conf.get("popup_settings", {})
+                        
+                        # 获取检测间隔
+                        current_check_interval = monitor_conf.get("check_interval", 1)
+                        fast_mode = popup_conf.get("fast_mode", False)
+                        if fast_mode:
+                            current_check_interval = 0.5
+                        
+                        # 获取提醒等待时间
+                        current_reply_wait = monitor_conf.get("reply_wait", 5)
+                        if fast_mode:
+                            current_reply_wait = 3
+                    except:
+                        current_check_interval = check_interval
+                        current_reply_wait = reply_wait
+                    
+                    # 截图
+                    img = screenshot()
+                    if img is None:
+                        self.safe_add_log_message("截图失败")
+                        time.sleep(current_check_interval)
+                        continue
+                    
+                    self.detection_count += 1
+                    results = []
+                    
+                    # YOLO检测
+                    if self.yolo_manager and self.yolo_manager.initialized:
+                        results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
+                        if results:
+                            self.safe_add_log_message(f"🔍 检测到 {len(results)} 个弹窗")
+                            # 添加详细的检测信息
+                            for i, result in enumerate(results):
+                                self.safe_add_log_message(f"🔍 弹窗 {i+1}: 置信度={result.get('confidence', 0):.2f}, 文本长度={len(result.get('text', ''))}")
+                        elif self.detection_count % 10 == 0:
+                            self.safe_add_log_message(f"🔍 第 {self.detection_count} 次检测：未发现弹窗")
+                    else:
+                        if self.detection_count % 10 == 0:
+                            self.safe_add_log_message(f"⚠️ YOLO模型未初始化，跳过弹窗检测")
+                            # 添加YOLO状态信息
+                            if self.yolo_manager:
+                                self.safe_add_log_message(f"⚠️ YOLO管理器状态: initialized={self.yolo_manager.initialized}")
+                            else:
+                                self.safe_add_log_message(f"⚠️ YOLO管理器为None")
+                    
+                    # 处理检测结果
+                    for result in results:
+                        text = result['text']
+                        from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
+                        if text and current_fuzzy_matcher:
+                            self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
+                            first_line = text.splitlines()[0] if text else ""
+                            self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                             
-                            # 获取检测间隔
-                            current_check_interval = monitor_conf.get("check_interval", 1)
-                            fast_mode = popup_conf.get("fast_mode", False)
-                            if fast_mode:
-                                current_check_interval = 0.5
+                            # 添加详细的匹配调试信息
+                            self.safe_add_log_message(f"🔍 开始模糊匹配: '{first_line}'")
+                            if current_fuzzy_matcher:
+                                self.safe_add_log_message(f"🔍 模糊匹配器已初始化")
+                                # 获取当前联系人列表
+                                config_manager = get_config_manager()
+                                conf = config_manager.load_config()
+                                target_contacts = conf.get("chat_app", {}).get("target_contacts", [])
+                                self.safe_add_log_message(f"🔍 当前联系人列表: {target_contacts}")
+                            else:
+                                self.safe_add_log_message(f"⚠️ 模糊匹配器未初始化")
                             
-                            # 获取提醒等待时间
-                            current_reply_wait = monitor_conf.get("reply_wait", 5)
-                            if fast_mode:
-                                current_reply_wait = 3
-                        except:
-                            current_check_interval = check_interval
-                            current_reply_wait = reply_wait
-                        
-                        # 截图
-                        img = screenshot()
-                        if img is None:
-                            self.safe_add_log_message("截图失败")
-                            time.sleep(current_check_interval)
-                            continue
-                        
-                        self.detection_count += 1
-                        results = []
-                        
-                        # YOLO检测
-                        if self.yolo_manager and self.yolo_manager.initialized:
-                            results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
-                            if results:
-                                self.safe_add_log_message(f"🔍 检测到 {len(results)} 个弹窗")
-                            elif self.detection_count % 10 == 0:
-                                self.safe_add_log_message(f"🔍 第 {self.detection_count} 次检测：未发现弹窗")
-                        else:
-                            if self.detection_count % 10 == 0:
-                                self.safe_add_log_message(f"⚠️ YOLO模型未初始化，跳过弹窗检测")
-                        
-                        # 处理检测结果
-                        for result in results:
-                            text = result['text']
-                            from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
-                            if text and current_fuzzy_matcher:
-                                self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
-                                first_line = text.splitlines()[0] if text else ""
-                                self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
+                            match_result = current_fuzzy_matcher.match_sender(first_line)
+                            if match_result:
+                                contact, sender, similarity = match_result
+                                self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
+                            else:
+                                self.safe_add_log_message(f"❌ 第一行匹配失败: '{first_line}'")
+                                now = time.time()
+                                time_since_last = now - self.last_reply_time
                                 
-                                match_result = current_fuzzy_matcher.match_sender(first_line)
-                                if match_result:
-                                    contact, sender, similarity = match_result
-                                    self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
-                                    now = time.time()
-                                    time_since_last = now - self.last_reply_time
-                                    
-                                    if time_since_last > current_reply_wait:
-                                        self.safe_add_detection_result(
-                                            app_name, 
-                                            f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
-                                            result.get('confidence'),
-                                            "YOLO+OCR"
-                                        )
-                                        self.safe_add_log_message(f"🔊 播放联系人提醒音")
-                                        play_sound("contact")
-                                        self.last_reply_time = now
-                                        break
-                                    else:
-                                        remaining_time = current_reply_wait - time_since_last
-                                        self.safe_add_log_message(f"⏰ 距离上次提醒还有 {remaining_time:.1f} 秒，跳过本次提醒")
+                                if time_since_last > current_reply_wait:
+                                    self.safe_add_detection_result(
+                                        app_name, 
+                                        f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
+                                        result.get('confidence'),
+                                        "YOLO+OCR"
+                                    )
+                                    self.safe_add_log_message(f"🔊 播放联系人提醒音")
+                                    play_sound("contact")
+                                    self.last_reply_time = now
+                                    break
+                                else:
+                                    remaining_time = current_reply_wait - time_since_last
+                                    self.safe_add_log_message(f"⏰ 距离上次提醒还有 {remaining_time:.1f} 秒，跳过本次提醒")
                         
                         # 4. 状态日志（定期输出监控状态）
                         if self.detection_count % 30 == 0:
@@ -877,15 +902,53 @@ class ChatMonitorGUI:
     
     def on_contacts_saved(self):
         """联系人设置保存后的回调"""
-        self.safe_add_log_message("✅ 联系人设置已更新")
+        try:
+            # 重新加载FUZZY_MATCHER以确保使用最新的联系人列表
+            from main_monitor_dynamic import update_target_contacts
+            config_manager = get_config_manager()
+            conf = config_manager.load_config()
+            target_contacts = conf.get("chat_app", {}).get("target_contacts", [])
+            
+            # 更新FUZZY_MATCHER
+            update_target_contacts(target_contacts)
+            
+            # 在日志中用逗号分隔显示联系人
+            contacts_display = ", ".join(target_contacts) if target_contacts else "无"
+            self.safe_add_log_message(f"✅ 联系人设置已更新，FUZZY_MATCHER已重新加载 ({len(target_contacts)} 个联系人): {contacts_display}")
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 更新FUZZY_MATCHER失败: {str(e)}")
     
     def on_network_saved(self):
         """网络监控设置保存后的回调"""
-        self.safe_add_log_message("✅ 网络监控设置已更新")
+        try:
+            # 重新加载网络监控配置
+            config_manager = get_config_manager()
+            conf = config_manager.load_config()
+            network_conf = conf.get("network_monitor", {})
+            self.safe_add_log_message(f"✅ 网络监控设置已更新 (检测间隔: {network_conf.get('check_interval', 10)}秒)")
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 更新网络监控设置失败: {str(e)}")
     
     def on_popup_saved(self):
         """弹框监控设置保存后的回调"""
-        self.safe_add_log_message("✅ 弹框监控设置已更新")
+        try:
+            # 重新加载弹框监控配置
+            config_manager = get_config_manager()
+            conf = config_manager.load_config()
+            monitor_conf = conf.get("monitor", {})
+            popup_conf = conf.get("popup_settings", {})
+            
+            check_interval = monitor_conf.get("check_interval", 1)
+            reply_wait = monitor_conf.get("reply_wait", 5)
+            fast_mode = popup_conf.get("fast_mode", False)
+            
+            if fast_mode:
+                check_interval = 0.5
+                reply_wait = 3
+            
+            self.safe_add_log_message(f"✅ 弹框监控设置已更新 (检测间隔: {check_interval}秒, 等待时间: {reply_wait}秒, 快速模式: {'开启' if fast_mode else '关闭'})")
+        except Exception as e:
+            self.safe_add_log_message(f"❌ 更新弹框监控设置失败: {str(e)}")
     
 
     
