@@ -670,17 +670,17 @@ class ChatMonitorGUI:
                         if text and current_fuzzy_matcher:
                             self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
                             first_line = text.splitlines()[0] if text else ""
-                            self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
+                            # self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                             
                             # 添加详细的匹配调试信息
-                            self.safe_add_log_message(f"🔍 开始模糊匹配: '{first_line}'")
+                            # self.safe_add_log_message(f"🔍 开始模糊匹配: '{first_line}'")
                             if current_fuzzy_matcher:
                                 self.safe_add_log_message(f"🔍 模糊匹配器已初始化")
                                 # 获取当前联系人列表
                                 config_manager = get_config_manager()
                                 conf = config_manager.load_config()
                                 target_contacts = conf.get("chat_app", {}).get("target_contacts", [])
-                                self.safe_add_log_message(f"🔍 当前联系人列表: {target_contacts}")
+                                # self.safe_add_log_message(f"🔍 当前联系人列表: {target_contacts}")
                             else:
                                 self.safe_add_log_message(f"⚠️ 模糊匹配器未初始化")
                             
@@ -688,15 +688,14 @@ class ChatMonitorGUI:
                             if match_result:
                                 contact, sender, similarity = match_result
                                 self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
-                            else:
-                                self.safe_add_log_message(f"❌ 第一行匹配失败: '{first_line}'")
                                 now = time.time()
                                 time_since_last = now - self.last_reply_time
                                 
                                 if time_since_last > current_reply_wait:
                                     self.safe_add_detection_result(
                                         app_name, 
-                                        f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
+                                        # 目标联系人: {contact}（识别为: {sender},  这个显示在主软件上也可能被当成弹框的发信人
+                                        f"相似度: {similarity:.2f}）",
                                         result.get('confidence'),
                                         "YOLO+OCR"
                                     )
@@ -707,6 +706,8 @@ class ChatMonitorGUI:
                                 else:
                                     remaining_time = current_reply_wait - time_since_last
                                     self.safe_add_log_message(f"⏰ 距离上次提醒还有 {remaining_time:.1f} 秒，跳过本次提醒")
+                            # else:
+                            #     self.safe_add_log_message(f"❌ 第一行匹配失败: '{first_line}'")
                         
                         # 4. 状态日志（定期输出监控状态）
                         if self.detection_count % 30 == 0:
