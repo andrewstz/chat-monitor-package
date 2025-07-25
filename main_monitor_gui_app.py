@@ -20,6 +20,11 @@ from main_monitor_dynamic import (
     config_manager
 )
 
+# 导入GUI设置模块
+from gui.contacts_settings import ContactsSettingsWindow
+from gui.network_settings import NetworkSettingsWindow
+from gui.popup_settings import PopupSettingsWindow
+
 def debug_log(msg):
     try:
         with open("/tmp/chatmonitor_debug.log", "a", encoding="utf-8") as f:
@@ -228,11 +233,30 @@ class ChatMonitorGUI:
         )
         self.clear_button.grid(row=0, column=1, padx=(0, 10))
         
+        # 监控状态
+        self.monitoring = False
+        self.monitor_thread = None
+        self.yolo_manager = None
+        self.last_reply_time = 0
+        self.detection_count = 0
+        
+        # 监控开关状态
+        self.app_monitor_enabled = True
+        self.network_monitor_enabled = True
+        
+        # 网络监控器
+        self.network_monitor = None
+        
+        # 初始化设置窗口（必须在按钮创建之前）
+        self.contacts_settings = ContactsSettingsWindow(self.root, self.on_contacts_saved)
+        self.network_settings = NetworkSettingsWindow(self.root, self.on_network_saved)
+        self.popup_settings = PopupSettingsWindow(self.root, self.on_popup_saved)
+        
         # 发信人设置按钮
         self.contacts_button = ttk.Button(
             self.button_frame,
             text="发信人设置",
-            command=self.open_contacts_settings
+            command=self.contacts_settings.open_contacts_settings
         )
         self.contacts_button.grid(row=0, column=2, padx=(0, 10))
         
@@ -240,9 +264,17 @@ class ChatMonitorGUI:
         self.network_button = ttk.Button(
             self.button_frame,
             text="网络监控频率",
-            command=self.open_network_settings
+            command=self.network_settings.open_network_settings
         )
         self.network_button.grid(row=0, column=3, padx=(0, 10))
+        
+        # 弹框监控设置按钮
+        self.popup_button = ttk.Button(
+            self.button_frame,
+            text="弹框监控设置",
+            command=self.popup_settings.open_popup_settings
+        )
+        self.popup_button.grid(row=0, column=4, padx=(0, 10))
         
         # 关闭按钮
         self.close_button = ttk.Button(
@@ -250,7 +282,7 @@ class ChatMonitorGUI:
             text="关闭程序",
             command=self.close_program
         )
-        self.close_button.grid(row=0, column=4)
+        self.close_button.grid(row=0, column=5)
         
         # 监控开关框架
         self.switch_frame = ttk.LabelFrame(self.main_frame, text="监控开关", padding="5")
@@ -276,15 +308,7 @@ class ChatMonitorGUI:
         )
         self.network_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
         
-        # 弹框监控开关
-        self.popup_monitor_var = tk.BooleanVar(value=True)
-        self.popup_monitor_check = ttk.Checkbutton(
-            self.switch_frame,
-            text="弹框监控",
-            variable=self.popup_monitor_var,
-            command=self.on_popup_monitor_toggle
-        )
-        self.popup_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
+
         
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.close_program)
@@ -293,26 +317,14 @@ class ChatMonitorGUI:
         self.root.update_idletasks()
         self.root.geometry("")  # 清除任何固定大小设置
         
-        # 监控状态
-        self.monitoring = False
-        self.monitor_thread = None
-        self.yolo_manager = None
-        self.last_reply_time = 0
-        self.detection_count = 0
-        
-        # 监控开关状态
-        self.app_monitor_enabled = True
-        self.network_monitor_enabled = True
-        self.popup_monitor_enabled = True
-        
-        # 网络监控器
-        self.network_monitor = None
-        
         # 初始化配置
         self.init_monitoring()
         
         # 更新初始状态
         self.update_status_label()
+        
+        # 自动启动监控
+        self.auto_start_monitoring()
     
     def set_window_icon(self):
         """设置窗口图标"""
@@ -598,13 +610,32 @@ class ChatMonitorGUI:
                             time.sleep(check_interval)
                             continue
                     
-                    # 3. 弹框监控（独立运行）
-                    if self.popup_monitor_enabled:
+                    # 3. 弹框监控（默认运行）
+                        # 读取弹框设置
+                        try:
+                            conf = config_manager.load_config()
+                            monitor_conf = conf.get("monitor", {})
+                            popup_conf = conf.get("popup_settings", {})
+                            
+                            # 获取检测间隔
+                            current_check_interval = monitor_conf.get("check_interval", 1)
+                            fast_mode = popup_conf.get("fast_mode", False)
+                            if fast_mode:
+                                current_check_interval = 0.5
+                            
+                            # 获取提醒等待时间
+                            current_reply_wait = monitor_conf.get("reply_wait", 5)
+                            if fast_mode:
+                                current_reply_wait = 3
+                        except:
+                            current_check_interval = check_interval
+                            current_reply_wait = reply_wait
+                        
                         # 截图
                         img = screenshot()
                         if img is None:
                             self.safe_add_log_message("截图失败")
-                            time.sleep(check_interval)
+                            time.sleep(current_check_interval)
                             continue
                         
                         self.detection_count += 1
@@ -613,68 +644,89 @@ class ChatMonitorGUI:
                         # YOLO检测
                         if self.yolo_manager and self.yolo_manager.initialized:
                             results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
-                            if debug_verbose and results:
-                                self.safe_add_log_message(f"检测到 {len(results)} 个弹窗")
+                            if results:
+                                self.safe_add_log_message(f"🔍 检测到 {len(results)} 个弹窗")
+                            elif self.detection_count % 10 == 0:
+                                self.safe_add_log_message(f"🔍 第 {self.detection_count} 次检测：未发现弹窗")
+                        else:
+                            if self.detection_count % 10 == 0:
+                                self.safe_add_log_message(f"⚠️ YOLO模型未初始化，跳过弹窗检测")
                         
                         # 处理检测结果
                         for result in results:
                             text = result['text']
-                            # 重新获取最新的FUZZY_MATCHER（确保获取到最新的联系人） 要不然和保存那里的作用域都不一样
                             from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
                             if text and current_fuzzy_matcher:
-                                # 添加调试信息
                                 self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
-                                
                                 first_line = text.splitlines()[0] if text else ""
                                 self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                                 
-                                # 检查第一行
                                 match_result = current_fuzzy_matcher.match_sender(first_line)
                                 if match_result:
                                     contact, sender, similarity = match_result
-                                    # {contact} 
                                     self.safe_add_log_message(f"✅ 第一行匹配成功: (相似度: {similarity:.2f})")
                                     now = time.time()
-                                    if now - self.last_reply_time > reply_wait:
+                                    time_since_last = now - self.last_reply_time
+                                    
+                                    if time_since_last > current_reply_wait:
                                         self.safe_add_detection_result(
                                             app_name, 
                                             f"目标联系人: {contact}（识别为: {sender}, 相似度: {similarity:.2f}）",
                                             result.get('confidence'),
                                             "YOLO+OCR"
                                         )
+                                        self.safe_add_log_message(f"🔊 播放联系人提醒音")
                                         play_sound("contact")
                                         self.last_reply_time = now
                                         break
-                    
-                    # 4. 状态日志（定期输出监控状态）
-                    if self.detection_count % 30 == 0:  # 每30次检测输出一次状态
-                        status_msg = []
-                        if self.app_monitor_enabled:
-                            status_msg.append("应用监控: 开启")
-                        else:
-                            status_msg.append("应用监控: 关闭")
+                                    else:
+                                        remaining_time = current_reply_wait - time_since_last
+                                        self.safe_add_log_message(f"⏰ 距离上次提醒还有 {remaining_time:.1f} 秒，跳过本次提醒")
                         
-                        if self.network_monitor_enabled:
-                            status_msg.append("网络监控: 开启")
-                        else:
-                            status_msg.append("网络监控: 关闭")
+                        # 4. 状态日志（定期输出监控状态）
+                        if self.detection_count % 30 == 0:
+                            status_msg = []
+                            if self.app_monitor_enabled:
+                                status_msg.append("应用监控: 开启")
+                            else:
+                                status_msg.append("应用监控: 关闭")
+                            
+                            if self.network_monitor_enabled:
+                                status_msg.append("网络监控: 开启")
+                            else:
+                                status_msg.append("网络监控: 关闭")
+                            
+                            status_msg.append("弹框监控: 开启")  # 弹框监控始终开启
+                            
+                            if status_msg:
+                                self.safe_add_log_message(f"📊 监控状态: {' | '.join(status_msg)}")
                         
-                        if self.popup_monitor_enabled:
-                            status_msg.append("弹框监控: 开启")
-                        else:
-                            status_msg.append("弹框监控: 关闭")
+                        # 4. 状态日志（定期输出监控状态）
+                        if self.detection_count % 30 == 0:  # 每30次检测输出一次状态
+                            status_msg = []
+                            if self.app_monitor_enabled:
+                                status_msg.append("应用监控: 开启")
+                            else:
+                                status_msg.append("应用监控: 关闭")
+                            
+                            if self.network_monitor_enabled:
+                                status_msg.append("网络监控: 开启")
+                            else:
+                                status_msg.append("网络监控: 关闭")
+                            
+                            status_msg.append("弹框监控: 开启")  # 弹框监控始终开启
+                            
+                            if status_msg:
+                                self.safe_add_log_message(f"📊 监控状态: {' | '.join(status_msg)}")
                         
-                        if status_msg:
-                            self.safe_add_log_message(f"📊 监控状态: {' | '.join(status_msg)}")
+                        # 5. 检查是否所有监控都关闭
+                        if not self.app_monitor_enabled and not self.network_monitor_enabled:
+                            if self.detection_count % 10 == 0:  # 每10次检测输出一次状态
+                                self.safe_add_log_message("⚠️ 应用和网络监控已关闭，弹框监控仍在运行")
                     
-                    # 5. 检查是否所有监控都关闭
-                    if not self.app_monitor_enabled and not self.network_monitor_enabled and not self.popup_monitor_enabled:
-                        if self.detection_count % 10 == 0:  # 每10次检测输出一次状态
-                            self.safe_add_log_message("⚠️ 所有监控已关闭，程序处于待机状态")
-                    
-                    time.sleep(check_interval)
-                    
-                    time.sleep(check_interval)
+                    # 使用动态检测间隔
+                    final_sleep_time = current_check_interval if 'current_check_interval' in locals() else check_interval
+                    time.sleep(final_sleep_time)
                     
                 except Exception as e:
                     self.safe_add_log_message(f"监控循环错误: {str(e)}")
@@ -783,436 +835,24 @@ class ChatMonitorGUI:
             self.safe_add_log_message(f"❌ 自动启动监控失败: {str(e)}")
             debug_log(f"[AUTO_START] 自动启动监控失败: {str(e)}")
     
-    def open_contacts_settings(self):
-        """打开发信人设置窗口"""
-        try:
-            # 创建设置窗口
-            settings_window = tk.Toplevel(self.root)
-            settings_window.title("发信人设置")
-            # 不设置固定大小，让窗口自适应内容
-            settings_window.resizable(True, True)
-            settings_window.transient(self.root)  # 设置为主窗口的子窗口
-            settings_window.grab_set()  # 模态窗口
-            
-            # 居中显示
-            settings_window.update_idletasks()
-            x = (settings_window.winfo_screenwidth() // 2) - (settings_window.winfo_width() // 2)
-            y = (settings_window.winfo_screenheight() // 2) - (settings_window.winfo_height() // 2)
-            settings_window.geometry(f"+{x}+{y}")
-            
-            # 创建界面
-            self.create_contacts_settings_ui(settings_window)
-            
-            # 确保弹框显示在主窗口之上
-            settings_window.lift()  # 提升到最顶层
-            settings_window.focus_force()  # 强制设置焦点
-            
-            # 绑定窗口关闭事件，确保关闭时释放模态
-            def on_closing():
-                settings_window.grab_release()
-                settings_window.destroy()
-            
-            settings_window.protocol("WM_DELETE_WINDOW", on_closing)
-            
-        except Exception as e:
-            self.safe_add_log_message(f"❌ 打开发信人设置失败: {str(e)}")
-            debug_log(f"[CONTACTS] 打开设置窗口失败: {str(e)}")
-    
-    def create_contacts_settings_ui(self, window):
-        """创建发信人设置界面"""
-        # 配置窗口网格权重，确保自适应
-        window.columnconfigure(0, weight=1)
-        window.rowconfigure(0, weight=1)
-        
-        # 主框架
-        main_frame = ttk.Frame(window, padding="20")
-        main_frame.grid(row=0, column=0, sticky="nsew")
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(4, weight=1)  # 让文本框区域可以扩展
-        
-        # 标题
-        title_label = ttk.Label(main_frame, text="监控发信人设置", font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
-        
-        # 说明文字
-        instruction_label = ttk.Label(main_frame, text="请输入要监控的发信人姓名，多个发信人用逗号分隔：", 
-                                    font=("Arial", 10))
-        instruction_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
-        
-        # 示例
-        example_label = ttk.Label(main_frame, text="示例：张三,李四,王五 或 张三，李四，王五", 
-                                font=("Arial", 9), foreground="gray")
-        example_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 20))
-        
-        # 输入框标签
-        input_label = ttk.Label(main_frame, text="发信人列表：", font=("Arial", 11, "bold"))
-        input_label.grid(row=3, column=0, sticky="w", pady=(0, 5))
-        
-        # 输入框
-        contact_text = tk.Text(main_frame, height=8, width=50, font=("Arial", 11))
-        contact_text.grid(row=4, column=0, columnspan=2, sticky="nsew", pady=(0, 20))
-        
-        # 配置文本框的滚动条
-        text_scrollbar = ttk.Scrollbar(main_frame, orient="vertical", command=contact_text.yview)
-        text_scrollbar.grid(row=4, column=2, sticky="ns")
-        contact_text.configure(yscrollcommand=text_scrollbar.set)
-        
-        # 按钮框架
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=5, column=0, columnspan=2, pady=(20, 0))
-        
-        # 状态标签
-        status_label = ttk.Label(main_frame, text="", font=("Arial", 9))
-        status_label.grid(row=6, column=0, columnspan=2, pady=(10, 0))
-        
-        # 加载默认值
-        self.load_contacts_to_text(contact_text, status_label)
-        
-        # 保存按钮
-        save_button = ttk.Button(button_frame, text="保存设置", 
-                                command=lambda: self.save_contacts_from_text(contact_text, status_label, window))
-        save_button.pack(side="left", padx=(0, 10))
-        
-        # 重置按钮
-        reset_button = ttk.Button(button_frame, text="重置为默认", 
-                                command=lambda: self.load_contacts_to_text(contact_text, status_label))
-        reset_button.pack(side="left", padx=(0, 10))
-        
-        # 清空按钮
-        clear_button = ttk.Button(button_frame, text="清空", 
-                                command=lambda: self.clear_contacts_text(contact_text, status_label))
-        clear_button.pack(side="left", padx=(0, 10))
-        
-        # 取消按钮
-        cancel_button = ttk.Button(button_frame, text="取消", command=window.destroy)
-        cancel_button.pack(side="left")
-        
-        # 让窗口自适应内容大小
-        window.update_idletasks()
-        window.geometry("")  # 清除任何固定大小设置
-    
-    def load_contacts_to_text(self, text_widget, status_label):
-        """加载发信人到文本框"""
-        try:
-            conf = get_config()
-            default_contacts = conf.get("chat_app", {}).get("target_contacts", [])
-            
-            if default_contacts:
-                contacts_str = ", ".join(default_contacts)
-                text_widget.delete(1.0, tk.END)
-                text_widget.insert(1.0, contacts_str)
-                self.update_settings_status_label(status_label, f"已加载 {len(default_contacts)} 个默认发信人")
-            else:
-                self.update_settings_status_label(status_label, "未找到默认发信人配置")
-                
-        except Exception as e:
-            self.update_settings_status_label(status_label, f"加载配置文件失败: {str(e)}")
-    
-    def parse_contacts(self, text):
-        """解析发信人文本，支持中英文逗号"""
-        import re
-        
-        if not text.strip():
-            return []
-        
-        # 使用正则表达式分割，支持中英文逗号
-        contacts = re.split(r'[,，]', text)
-        
-        # 清理每个联系人（去除空格和换行）
-        cleaned_contacts = []
-        for contact in contacts:
-            contact = contact.strip()
-            if contact:  # 只添加非空联系人
-                cleaned_contacts.append(contact)
-        
-        return cleaned_contacts
-    
-    def save_contacts_from_text(self, text_widget, status_label, window):
-        """从文本框保存发信人设置"""
-        try:
-            # 获取输入文本
-            text = text_widget.get(1.0, tk.END).strip()
-            
-            # 解析发信人
-            contacts = self.parse_contacts(text)
-            
-            if not contacts:
-                from tkinter import messagebox
-                messagebox.showwarning("警告", "请输入至少一个发信人姓名")
-                return
-            
-            # 读取现有配置
-            conf = get_config()
-            
-            # 更新发信人配置
-            if "chat_app" not in conf:
-                conf["chat_app"] = {}
-            
-            conf["chat_app"]["target_contacts"] = contacts
-            
-            # 保存配置文件 - 使用与读取相同的路径
-            from main_monitor_dynamic import get_config_path
-            config_path = get_config_path()
-            import yaml
-            with open(config_path, 'w', encoding='utf-8') as f:
-                yaml.dump(conf, f, default_flow_style=False, allow_unicode=True)
-            
-            # 立即更新内存中的目标联系人（这会同时更新TARGET_CONTACTS和FUZZY_MATCHER）
-            from main_monitor_dynamic import update_target_contacts
-            update_target_contacts(contacts)
-            
-            # 验证更新是否成功
-            from main_monitor_dynamic import TARGET_CONTACTS, FUZZY_MATCHER
-            debug_log(f"[CONTACTS] TARGET_CONTACTS已更新: {TARGET_CONTACTS}")
-            if FUZZY_MATCHER and hasattr(FUZZY_MATCHER, 'target_contacts'):
-                debug_log(f"[CONTACTS] FUZZY_MATCHER已更新: {FUZZY_MATCHER.target_contacts}")
-            
-            self.update_settings_status_label(status_label, f"已保存 {len(contacts)} 个发信人: {', '.join(contacts)}")
-            self.safe_add_log_message(f"✅ 发信人设置已更新: {', '.join(contacts)}")
-            
-            from tkinter import messagebox
-            messagebox.showinfo("成功", f"已保存 {len(contacts)} 个发信人设置，监控将立即生效")
-            
-            # 关闭设置窗口
-            window.destroy()
-            
-        except Exception as e:
-            error_msg = f"保存配置文件失败: {str(e)}"
-            self.update_settings_status_label(status_label, error_msg)
-            from tkinter import messagebox
-            messagebox.showerror("错误", error_msg)
-    
-    def clear_contacts_text(self, text_widget, status_label):
-        """清空发信人文本框"""
-        text_widget.delete(1.0, tk.END)
-        self.update_settings_status_label(status_label, "已清空发信人列表")
-    
-    def update_settings_status_label(self, status_label, message):
-        """更新设置窗口状态标签"""
-        status_label.config(text=message)
-        status_label.winfo_toplevel().update_idletasks()
-    
-    def open_network_settings(self):
-        """打开网络监控频率设置窗口"""
-        try:
-            # 创建新窗口
-            settings_window = tk.Toplevel(self.root)
-            settings_window.title("网络监控频率设置")
-            # 不设置固定大小，让窗口自适应内容
-            settings_window.resizable(True, True)
-            
-            # 设置窗口层级
-            settings_window.transient(self.root)
-            settings_window.grab_set()
-            settings_window.lift()
-            settings_window.focus_force()
-            
-            # 创建界面
-            self.create_network_settings_ui(settings_window)
-            
-            # 设置关闭事件
-            def on_closing():
-                settings_window.grab_release()
-                settings_window.destroy()
-            settings_window.protocol("WM_DELETE_WINDOW", on_closing)
-            
-        except Exception as e:
-            self.safe_add_log_message(f"❌ 打开网络监控设置失败: {str(e)}")
-    
-    def create_network_settings_ui(self, window):
-        """创建网络监控设置界面"""
-        # 配置窗口网格权重，确保自适应
-        window.columnconfigure(0, weight=1)
-        window.rowconfigure(0, weight=1)
-        
-        # 主框架
-        main_frame = ttk.Frame(window, padding="20")
-        main_frame.grid(row=0, column=0, sticky="nsew")
-        main_frame.columnconfigure(0, weight=1)
-        
-        # 标题
-        title_label = ttk.Label(main_frame, text="网络监控频率设置", font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, pady=(0, 20), sticky="w")
-        
-        # 说明文本
-        description_text = """网络监控参数说明：
 
-• 检测间隔：每次网络检测之间的时间间隔（秒）
-  推荐值：10-60秒，值越小检测越频繁
-
-• 超时时间：单次网络检测的最大等待时间（秒）
-  推荐值：5-10秒，值越大越稳定但响应越慢
-
-• 连续失败阈值：触发警报前允许的连续失败次数
-  推荐值：2-5次，值越大越稳定但响应越慢
-
-• 容错时间：连续失败后等待的时间（分钟）
-  推荐值：0.1-1分钟，值越小响应越快
-
-当前设置："""
-        desc_label = ttk.Label(main_frame, text=description_text, justify=tk.LEFT, font=("Arial", 10))
-        desc_label.grid(row=1, column=0, pady=(0, 20), sticky="w")
-        
-        # 参数输入框架
-        params_frame = ttk.LabelFrame(main_frame, text="网络监控参数", padding="10")
-        params_frame.grid(row=2, column=0, sticky="ew", pady=(0, 20))
-        params_frame.columnconfigure(1, weight=1)
-        
-        # 检测间隔
-        ttk.Label(params_frame, text="检测间隔（秒）:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.check_interval_var = tk.StringVar()
-        check_interval_entry = ttk.Entry(params_frame, textvariable=self.check_interval_var, width=15)
-        check_interval_entry.grid(row=0, column=1, padx=(10, 0), pady=5, sticky="w")
-        
-        # 超时时间
-        ttk.Label(params_frame, text="超时时间（秒）:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.timeout_var = tk.StringVar()
-        timeout_entry = ttk.Entry(params_frame, textvariable=self.timeout_var, width=15)
-        timeout_entry.grid(row=1, column=1, padx=(10, 0), pady=5, sticky="w")
-        
-        # 连续失败阈值
-        ttk.Label(params_frame, text="连续失败阈值:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.consecutive_failures_var = tk.StringVar()
-        consecutive_failures_entry = ttk.Entry(params_frame, textvariable=self.consecutive_failures_var, width=15)
-        consecutive_failures_entry.grid(row=2, column=1, padx=(10, 0), pady=5, sticky="w")
-        
-        # 容错时间
-        ttk.Label(params_frame, text="容错时间（分钟）:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.tolerance_minutes_var = tk.StringVar()
-        tolerance_minutes_entry = ttk.Entry(params_frame, textvariable=self.tolerance_minutes_var, width=15)
-        tolerance_minutes_entry.grid(row=3, column=1, padx=(10, 0), pady=5, sticky="w")
-        
-        # 状态标签
-        self.network_status_label = ttk.Label(main_frame, text="", font=("Arial", 10))
-        self.network_status_label.grid(row=3, column=0, pady=(0, 20), sticky="w")
-        
-        # 按钮框架
-        button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=4, column=0, pady=(0, 20), sticky="ew")
-        
-        # 加载当前设置
-        self.load_network_settings()
-        
-        # 保存按钮
-        save_button = ttk.Button(
-            button_frame,
-            text="保存设置",
-            command=lambda: self.save_network_settings(window)
-        )
-        save_button.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # 恢复默认按钮
-        default_button = ttk.Button(
-            button_frame,
-            text="恢复默认",
-            command=self.restore_network_defaults
-        )
-        default_button.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # 取消按钮
-        cancel_button = ttk.Button(
-            button_frame,
-            text="取消",
-            command=window.destroy
-        )
-        cancel_button.pack(side=tk.RIGHT)
-        
-        # 让窗口自适应内容大小
-        window.update_idletasks()
-        window.geometry("")  # 清除任何固定大小设置
     
-    def load_network_settings(self):
-        """加载当前网络监控设置"""
-        try:
-            from config_manager import get_config_manager
-            config_manager = get_config_manager()
-            network_config = config_manager.get_network_config()
-            
-            # 设置当前值
-            self.check_interval_var.set(str(network_config.get("check_interval", 10)))
-            self.timeout_var.set(str(network_config.get("timeout", 5)))
-            self.consecutive_failures_var.set(str(network_config.get("consecutive_failures", 3)))
-            self.tolerance_minutes_var.set(str(network_config.get("tolerance_minutes", 0.1)))
-            
-            self.update_network_status_label("✅ 已加载当前设置")
-            
-        except Exception as e:
-            self.update_network_status_label(f"❌ 加载设置失败: {str(e)}")
+
     
-    def save_network_settings(self, window):
-        """保存网络监控设置"""
-        try:
-            # 获取输入值
-            check_interval = float(self.check_interval_var.get())
-            timeout = float(self.timeout_var.get())
-            consecutive_failures = int(self.consecutive_failures_var.get())
-            tolerance_minutes = float(self.tolerance_minutes_var.get())
-            
-            # 验证输入
-            if check_interval < 1 or timeout < 1 or consecutive_failures < 1 or tolerance_minutes < 0.01:
-                self.update_network_status_label("❌ 参数值无效，请检查输入")
-                return
-            
-            # 保存到配置文件
-            from config_manager import get_config_manager
-            config_manager = get_config_manager()
-            
-            # 更新网络监控配置
-            config_manager.update_network_config({
-                "check_interval": check_interval,
-                "timeout": timeout,
-                "consecutive_failures": consecutive_failures,
-                "tolerance_minutes": tolerance_minutes
-            })
-            
-            self.update_network_status_label("✅ 设置已保存，监控将立即生效")
-            
-            # 显示成功消息
-            messagebox.showinfo("成功", "网络监控频率设置已保存，监控将立即生效")
-            
-            # 关闭窗口
-            window.destroy()
-            
-        except ValueError:
-            self.update_network_status_label("❌ 输入格式错误，请检查数值")
-        except Exception as e:
-            self.update_network_status_label(f"❌ 保存设置失败: {str(e)}")
+
     
-    def restore_network_defaults(self):
-        """恢复网络监控默认设置"""
-        try:
-            # 程序安装时的默认值
-            default_values = {
-                "check_interval": 60,      # 60秒
-                "timeout": 10,             # 10秒
-                "consecutive_failures": 6, # 6次
-                "tolerance_minutes": 0.5   # 0.5分钟
-            }
-            
-            # 设置默认值
-            self.check_interval_var.set(str(default_values["check_interval"]))
-            self.timeout_var.set(str(default_values["timeout"]))
-            self.consecutive_failures_var.set(str(default_values["consecutive_failures"]))
-            self.tolerance_minutes_var.set(str(default_values["tolerance_minutes"]))
-            
-            self.update_network_status_label("✅ 已恢复默认设置")
-            
-        except Exception as e:
-            self.update_network_status_label(f"❌ 恢复默认设置失败: {str(e)}")
+
     
-    def update_network_status_label(self, message):
-        """更新网络设置状态标签"""
-        self.network_status_label.config(text=message)
+
     
     def update_status_label(self):
         """更新主状态标签，显示监控开关状态"""
         try:
             app_status = "开启" if self.app_monitor_enabled else "关闭"
             network_status = "开启" if self.network_monitor_enabled else "关闭"
-            popup_status = "开启" if self.popup_monitor_enabled else "关闭"
             monitoring_status = "运行中" if self.monitoring else "已停止"
             
-            status_text = f"状态: {monitoring_status} | 应用监控: {app_status} | 网络监控: {network_status} | 弹框监控: {popup_status}"
+            status_text = f"状态: {monitoring_status} | 应用监控: {app_status} | 网络监控: {network_status}"
             self.status_label.config(text=status_text)
         except Exception as e:
             debug_log(f"[STATUS] 更新状态标签失败: {str(e)}")
@@ -1235,14 +875,19 @@ class ChatMonitorGUI:
         # 更新状态标签
         self.update_status_label()
     
-    def on_popup_monitor_toggle(self):
-        """弹框监控开关状态改变时触发"""
-        self.popup_monitor_enabled = self.popup_monitor_var.get()
-        debug_log(f"[SWITCH] 弹框监控开关状态: {self.popup_monitor_enabled}")
-        self.safe_add_log_message(f"弹框监控开关状态: {'开启' if self.popup_monitor_enabled else '关闭'}")
-        
-        # 更新状态标签
-        self.update_status_label()
+    def on_contacts_saved(self):
+        """联系人设置保存后的回调"""
+        self.safe_add_log_message("✅ 联系人设置已更新")
+    
+    def on_network_saved(self):
+        """网络监控设置保存后的回调"""
+        self.safe_add_log_message("✅ 网络监控设置已更新")
+    
+    def on_popup_saved(self):
+        """弹框监控设置保存后的回调"""
+        self.safe_add_log_message("✅ 弹框监控设置已更新")
+    
+
     
     def close_program(self):
         """关闭程序"""
