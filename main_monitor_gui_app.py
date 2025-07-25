@@ -276,6 +276,16 @@ class ChatMonitorGUI:
         )
         self.network_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
         
+        # 弹框监控开关
+        self.popup_monitor_var = tk.BooleanVar(value=True)
+        self.popup_monitor_check = ttk.Checkbutton(
+            self.switch_frame,
+            text="弹框监控",
+            variable=self.popup_monitor_var,
+            command=self.on_popup_monitor_toggle
+        )
+        self.popup_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
+        
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.close_program)
         
@@ -293,6 +303,7 @@ class ChatMonitorGUI:
         # 监控开关状态
         self.app_monitor_enabled = True
         self.network_monitor_enabled = True
+        self.popup_monitor_enabled = True
         
         # 网络监控器
         self.network_monitor = None
@@ -563,24 +574,17 @@ class ChatMonitorGUI:
             
             while self.monitoring:
                 try:
-                    # 检查是否有任何监控启用
-                    if not self.app_monitor_enabled and not self.network_monitor_enabled:
-                        time.sleep(check_interval)
-                        continue
+                    # 独立监控逻辑 - 每个监控功能独立运行
                     
-                    # 网络监控检查（根据开关状态）
+                    # 1. 网络监控（独立运行）
                     if self.network_monitor_enabled:
                         try:
                             from main_monitor_dynamic import check_network_with_alert
                             check_network_with_alert()
                         except Exception as e:
                             self.safe_add_log_message(f"网络监控检查失败: {str(e)}")
-                    else:
-                        # 网络监控关闭时，减少日志输出
-                        if self.detection_count % 20 == 0:  # 每20次检测输出一次状态
-                            self.safe_add_log_message("网络监控已关闭")
                     
-                    # 应用监控检查（根据开关状态）
+                    # 2. 应用监控（独立运行）
                     if self.app_monitor_enabled:
                         # 检查进程
                         if not check_process(app_name):
@@ -593,7 +597,9 @@ class ChatMonitorGUI:
                                 self.safe_add_log_message(f"❌ 进程退出提醒音播放失败: {str(e)}")
                             time.sleep(check_interval)
                             continue
-                        
+                    
+                    # 3. 弹框监控（独立运行）
+                    if self.popup_monitor_enabled:
                         # 截图
                         img = screenshot()
                         if img is None:
@@ -622,10 +628,6 @@ class ChatMonitorGUI:
                                 first_line = text.splitlines()[0] if text else ""
                                 self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                                 
-                                # 检查所有行文本
-                                # all_lines = text.splitlines()
-                                # self.safe_add_log_message(f"🔍 所有行数: {len(all_lines)}")
-                                
                                 # 检查第一行
                                 match_result = current_fuzzy_matcher.match_sender(first_line)
                                 if match_result:
@@ -643,10 +645,34 @@ class ChatMonitorGUI:
                                         play_sound("contact")
                                         self.last_reply_time = now
                                         break
-                    else:
-                        # 应用监控关闭时，跳过截图和检测
-                        time.sleep(check_interval)
-                        continue
+                    
+                    # 4. 状态日志（定期输出监控状态）
+                    if self.detection_count % 30 == 0:  # 每30次检测输出一次状态
+                        status_msg = []
+                        if self.app_monitor_enabled:
+                            status_msg.append("应用监控: 开启")
+                        else:
+                            status_msg.append("应用监控: 关闭")
+                        
+                        if self.network_monitor_enabled:
+                            status_msg.append("网络监控: 开启")
+                        else:
+                            status_msg.append("网络监控: 关闭")
+                        
+                        if self.popup_monitor_enabled:
+                            status_msg.append("弹框监控: 开启")
+                        else:
+                            status_msg.append("弹框监控: 关闭")
+                        
+                        if status_msg:
+                            self.safe_add_log_message(f"📊 监控状态: {' | '.join(status_msg)}")
+                    
+                    # 5. 检查是否所有监控都关闭
+                    if not self.app_monitor_enabled and not self.network_monitor_enabled and not self.popup_monitor_enabled:
+                        if self.detection_count % 10 == 0:  # 每10次检测输出一次状态
+                            self.safe_add_log_message("⚠️ 所有监控已关闭，程序处于待机状态")
+                    
+                    time.sleep(check_interval)
                     
                     time.sleep(check_interval)
                     
@@ -1183,9 +1209,10 @@ class ChatMonitorGUI:
         try:
             app_status = "开启" if self.app_monitor_enabled else "关闭"
             network_status = "开启" if self.network_monitor_enabled else "关闭"
+            popup_status = "开启" if self.popup_monitor_enabled else "关闭"
             monitoring_status = "运行中" if self.monitoring else "已停止"
             
-            status_text = f"状态: {monitoring_status} | 应用监控: {app_status} | 网络监控: {network_status}"
+            status_text = f"状态: {monitoring_status} | 应用监控: {app_status} | 网络监控: {network_status} | 弹框监控: {popup_status}"
             self.status_label.config(text=status_text)
         except Exception as e:
             debug_log(f"[STATUS] 更新状态标签失败: {str(e)}")
@@ -1204,6 +1231,15 @@ class ChatMonitorGUI:
         self.network_monitor_enabled = self.network_monitor_var.get()
         debug_log(f"[SWITCH] 网络监控开关状态: {self.network_monitor_enabled}")
         self.safe_add_log_message(f"网络监控开关状态: {'开启' if self.network_monitor_enabled else '关闭'}")
+        
+        # 更新状态标签
+        self.update_status_label()
+    
+    def on_popup_monitor_toggle(self):
+        """弹框监控开关状态改变时触发"""
+        self.popup_monitor_enabled = self.popup_monitor_var.get()
+        debug_log(f"[SWITCH] 弹框监控开关状态: {self.popup_monitor_enabled}")
+        self.safe_add_log_message(f"弹框监控开关状态: {'开启' if self.popup_monitor_enabled else '关闭'}")
         
         # 更新状态标签
         self.update_status_label()
