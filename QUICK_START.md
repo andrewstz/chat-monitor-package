@@ -65,7 +65,7 @@ git push -u origin main
 
 ### 修改构建参数
 
-编辑 `.github/workflows/quick-build.yml`:
+编辑 `gitActions/.github/workflows/quick-build.yml`:
 
 ```yaml
 - name: Build executable
@@ -107,7 +107,7 @@ strategy:
 
 1. 确保所有必要文件都在仓库中
 2. 检查文件路径是否正确
-3. 验证 `.github/workflows/` 目录存在
+3. 验证 `gitActions/.github/workflows/` 目录存在
 
 ### 权限问题
 
@@ -117,7 +117,7 @@ strategy:
 
 ## 📞 获取帮助
 
-- 查看详细文档：`README_GitHub_Actions.md`
+- 查看详细文档：`gitActions/README_GitHub_Actions.md`
 - 检查构建日志：GitHub Actions 页面
 - 提交 Issue：GitHub 仓库 Issues
 

@@ -1,0 +1,70 @@
+# Windows专用配置文件
+# 针对Windows环境优化的配置
+
+chat_app:
+  name: "Mango"  # 确保这个应用在Windows上运行
+  target_contacts:
+    - js_wbmalia-研发部助理
+    - 人事小姐姐
+    - 客户端项目
+  fuzzy_match:
+    enabled: true
+    similarity_threshold: 0.5
+    min_length: 2
+
+monitor:
+  check_interval: 2  # Windows下稍微慢一点
+  reply_wait: 5
+
+# YOLO模型配置 - Windows优化
+yolo:
+  enabled: true
+  model_path: "models/best.pt"
+  confidence: 0.6  # Windows下降低置信度
+  use_fallback: true
+
+# OCR配置 - Windows优化
+ocr:
+  tesseract:
+    lang: "chi_sim+eng"
+    config: "--psm 6"
+    use_preprocessing: true
+  text_correction:
+    enabled: true
+    char_corrections:
+      "儆": "警"
+      "千": "干"
+      "0": "O"
+      "1": "l"
+      "5": "S"
+      "8": "B"
+
+# 网络监控配置 - Windows优化
+network_monitor:
+  enabled: true
+  check_interval: 30  # Windows下检测间隔更长
+  timeout: 10
+  consecutive_failures: 3
+  tolerance_minutes: 0.5
+  test_targets:
+    - name: "谷歌"
+      url: "https://www.google.com"
+      method: "http"
+
+# 调试配置
+debug:
+  save_processed_images: false
+  save_detection_images: true
+  verbose: true
+
+# Windows特定配置
+windows:
+  audio:
+    use_powershell: true
+    fallback_to_beep: true
+  yolo:
+    use_cpu_only: true  # Windows下优先使用CPU
+    memory_limit: "2GB"
+  gui:
+    window_size: "600x750"
+    high_dpi: true 

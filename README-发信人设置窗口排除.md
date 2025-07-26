@@ -168,3 +168,8 @@ tail -f /tmp/chatmonitor_debug.log
 2. 运行测试脚本
 3. 提供详细的错误信息
 4. 联系开发者 
+
+
+
+
+

@@ -31,19 +31,101 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --name chat_monitor_windows main_monitor_gui_app.py
-        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --name network_monitor_windows network_monitor.py
+        pyinstaller --onefile --windowed --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=tkinter --hidden-import=PIL --hidden-import=PIL.Image --hidden-import=PIL.ImageTk --hidden-import=torch --hidden-import=torchvision --hidden-import=ultralytics --hidden-import=cv2 --hidden-import=pytesseract --hidden-import=numpy --hidden-import=transformers --hidden-import=sklearn --hidden-import=scipy --hidden-import=matplotlib --hidden-import=seaborn --hidden-import=pandas --hidden-import=yaml --hidden-import=re --hidden-import=threading --hidden-import=queue --hidden-import=datetime --hidden-import=time --hidden-import=os --hidden-import=sys --hidden-import=platform --hidden-import=subprocess --hidden-import=json --hidden-import=base64 --hidden-import=hashlib --hidden-import=logging --hidden-import=pathlib --hidden-import=shutil --hidden-import=tempfile --hidden-import=zipfile --hidden-import=tarfile --hidden-import=gzip --hidden-import=bz2 --hidden-import=lzma --hidden-import=pickle --hidden-import=shelve --hidden-import=sqlite3 --hidden-import=dbm --hidden-import=asyncio --hidden-import=concurrent.futures --hidden-import=multiprocessing --hidden-import=signal --hidden-import=socket --hidden-import=ssl --hidden-import=urllib --hidden-import=urllib.parse --hidden-import=urllib.request --hidden-import=urllib.error --hidden-import=email --hidden-import=email.mime --hidden-import=email.mime.text --hidden-import=email.mime.multipart --hidden-import=email.mime.base --hidden-import=email.mime.nonmultipart --hidden-import=email.encoders --hidden-import=email.charset --hidden-import=email.utils --hidden-import=email.header --hidden-import=email.iterators --hidden-import=email.generator --hidden-import=email.parser --hidden-import=email.policy --hidden-import=email.message --hidden-import=email.mime.message --hidden-import=email.mime.application --hidden-import=email.mime.audio --hidden-import=email.mime.image --hidden-import=email.mime.message --hidden-import=email.mime.multipart --hidden-import=email.mime.nonmultipart --hidden-import=email.mime.text --hidden-import=email.mime.base --hidden-import=email.mime.application --hidden-import=email.mime.audio --hidden-import=email.mime.image --hidden-import=email.mime.message --hidden-import=email.mime.multipart --hidden-import=email.mime.nonmultipart --hidden-import=email.mime.text --hidden-import=email.mime.base --name chat_monitor_windows main_monitor_gui_app.py
+        pyinstaller --onefile --hidden-import=requests --hidden-import=urllib3 --hidden-import=charset_normalizer --hidden-import=idna --hidden-import=certifi --hidden-import=torch --hidden-import=torchvision --hidden-import=ultralytics --hidden-import=cv2 --hidden-import=pytesseract --hidden-import=numpy --hidden-import=transformers --hidden-import=sklearn --hidden-import=scipy --hidden-import=matplotlib --hidden-import=seaborn --hidden-import=pandas --hidden-import=yaml --hidden-import=re --hidden-import=threading --hidden-import=queue --hidden-import=datetime --hidden-import=time --hidden-import=os --hidden-import=sys --hidden-import=platform --hidden-import=subprocess --hidden-import=json --hidden-import=base64 --hidden-import=hashlib --hidden-import=logging --hidden-import=pathlib --hidden-import=shutil --hidden-import=tempfile --hidden-import=zipfile --hidden-import=tarfile --hidden-import=gzip --hidden-import=bz2 --hidden-import=lzma --hidden-import=pickle --hidden-import=shelve --hidden-import=sqlite3 --hidden-import=dbm --hidden-import=asyncio --hidden-import=concurrent.futures --hidden-import=multiprocessing --hidden-import=signal --hidden-import=socket --hidden-import=ssl --hidden-import=urllib --hidden-import=urllib.parse --hidden-import=urllib.request --hidden-import=urllib.error --name network_monitor_windows network_monitor.py
     
     - name: Create Windows package
       run: |
         mkdir -p dist/windows
         copy dist\chat_monitor_windows.exe dist\windows\
         copy dist\network_monitor_windows.exe dist\windows\
+        
+        # 生成Windows专用配置文件
+        echo "# Windows专用配置文件 - 自动生成" > dist\windows\config_windows.yaml
+        echo "# 针对Windows环境优化的配置" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "chat_app:" >> dist\windows\config_windows.yaml
+        echo "  name: \"Mango\"" >> dist\windows\config_windows.yaml
+        echo "  target_contacts:" >> dist\windows\config_windows.yaml
+        echo "    - js_wbmalia-研发部助理" >> dist\windows\config_windows.yaml
+        echo "    - 人事小姐姐" >> dist\windows\config_windows.yaml
+        echo "    - 客户端项目" >> dist\windows\config_windows.yaml
+        echo "  fuzzy_match:" >> dist\windows\config_windows.yaml
+        echo "    enabled: true" >> dist\windows\config_windows.yaml
+        echo "    similarity_threshold: 0.5" >> dist\windows\config_windows.yaml
+        echo "    min_length: 2" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "monitor:" >> dist\windows\config_windows.yaml
+        echo "  check_interval: 2" >> dist\windows\config_windows.yaml
+        echo "  reply_wait: 5" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "# YOLO模型配置 - Windows优化" >> dist\windows\config_windows.yaml
+        echo "yolo:" >> dist\windows\config_windows.yaml
+        echo "  enabled: true" >> dist\windows\config_windows.yaml
+        echo "  model_path: \"models/best.pt\"" >> dist\windows\config_windows.yaml
+        echo "  confidence: 0.6" >> dist\windows\config_windows.yaml
+        echo "  use_fallback: true" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "# OCR配置 - Windows优化" >> dist\windows\config_windows.yaml
+        echo "ocr:" >> dist\windows\config_windows.yaml
+        echo "  tesseract:" >> dist\windows\config_windows.yaml
+        echo "    lang: \"chi_sim+eng\"" >> dist\windows\config_windows.yaml
+        echo "    config: \"--psm 6\"" >> dist\windows\config_windows.yaml
+        echo "    use_preprocessing: true" >> dist\windows\config_windows.yaml
+        echo "  text_correction:" >> dist\windows\config_windows.yaml
+        echo "    enabled: true" >> dist\windows\config_windows.yaml
+        echo "    char_corrections:" >> dist\windows\config_windows.yaml
+        echo "      \"儆\": \"警\"" >> dist\windows\config_windows.yaml
+        echo "      \"千\": \"干\"" >> dist\windows\config_windows.yaml
+        echo "      \"0\": \"O\"" >> dist\windows\config_windows.yaml
+        echo "      \"1\": \"l\"" >> dist\windows\config_windows.yaml
+        echo "      \"5\": \"S\"" >> dist\windows\config_windows.yaml
+        echo "      \"8\": \"B\"" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "# 网络监控配置 - Windows优化" >> dist\windows\config_windows.yaml
+        echo "network_monitor:" >> dist\windows\config_windows.yaml
+        echo "  enabled: true" >> dist\windows\config_windows.yaml
+        echo "  check_interval: 30" >> dist\windows\config_windows.yaml
+        echo "  timeout: 10" >> dist\windows\config_windows.yaml
+        echo "  consecutive_failures: 3" >> dist\windows\config_windows.yaml
+        echo "  tolerance_minutes: 0.5" >> dist\windows\config_windows.yaml
+        echo "  test_targets:" >> dist\windows\config_windows.yaml
+        echo "    - name: \"谷歌\"" >> dist\windows\config_windows.yaml
+        echo "      url: \"https://www.google.com\"" >> dist\windows\config_windows.yaml
+        echo "      method: \"http\"" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "# 调试配置" >> dist\windows\config_windows.yaml
+        echo "debug:" >> dist\windows\config_windows.yaml
+        echo "  save_processed_images: false" >> dist\windows\config_windows.yaml
+        echo "  save_detection_images: true" >> dist\windows\config_windows.yaml
+        echo "  verbose: true" >> dist\windows\config_windows.yaml
+        echo "" >> dist\windows\config_windows.yaml
+        echo "# Windows特定配置" >> dist\windows\config_windows.yaml
+        echo "windows:" >> dist\windows\config_windows.yaml
+        echo "  audio:" >> dist\windows\config_windows.yaml
+        echo "    use_powershell: true" >> dist\windows\config_windows.yaml
+        echo "    fallback_to_beep: true" >> dist\windows\config_windows.yaml
+        echo "  yolo:" >> dist\windows\config_windows.yaml
+        echo "    use_cpu_only: true" >> dist\windows\config_windows.yaml
+        echo "    memory_limit: \"2GB\"" >> dist\windows\config_windows.yaml
+        echo "  gui:" >> dist\windows\config_windows.yaml
+        echo "    window_size: \"600x750\"" >> dist\windows\config_windows.yaml
+        echo "    high_dpi: true" >> dist\windows\config_windows.yaml
+        
+        # 复制原始配置文件作为备用
         copy config_with_yolo.yaml dist\windows\
+        
         copy start_monitor.bat dist\windows\
         copy -r sounds dist\windows\
         copy -r test_img dist\windows\
         copy README.md dist\windows\
+        
+        # 创建Windows专用启动脚本
+        echo "@echo off" > dist\windows\start_monitor_windows.bat
+        echo "echo 正在启动Chat Monitor (Windows优化版)..." >> dist\windows\start_monitor_windows.bat
+        echo "echo 使用Windows专用配置文件..." >> dist\windows\start_monitor_windows.bat
+        echo "copy config_windows.yaml config_with_yolo.yaml" >> dist\windows\start_monitor_windows.bat
+        echo "chat_monitor_windows.exe" >> dist\windows\start_monitor_windows.bat
         
         # Create zip package
         powershell Compress-Archive -Path dist\windows\* -DestinationPath chat_monitor_windows_${{ matrix.python-version }}.zip
@@ -89,7 +171,82 @@ jobs:
         mkdir -p dist/linux
         cp dist/chat_monitor_linux dist/linux/
         cp dist/network_monitor_linux dist/linux/
+        
+        # 生成Linux专用配置文件
+        echo "# Linux专用配置文件 - 自动生成" > dist/linux/config_linux.yaml
+        echo "# 针对Linux环境优化的配置" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "chat_app:" >> dist/linux/config_linux.yaml
+        echo "  name: \"Mango\"" >> dist/linux/config_linux.yaml
+        echo "  target_contacts:" >> dist/linux/config_linux.yaml
+        echo "    - js_wbmalia-研发部助理" >> dist/linux/config_linux.yaml
+        echo "    - 人事小姐姐" >> dist/linux/config_linux.yaml
+        echo "    - 客户端项目" >> dist/linux/config_linux.yaml
+        echo "  fuzzy_match:" >> dist/linux/config_linux.yaml
+        echo "    enabled: true" >> dist/linux/config_linux.yaml
+        echo "    similarity_threshold: 0.5" >> dist/linux/config_linux.yaml
+        echo "    min_length: 2" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "monitor:" >> dist/linux/config_linux.yaml
+        echo "  check_interval: 1" >> dist/linux/config_linux.yaml
+        echo "  reply_wait: 3" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "# YOLO模型配置 - Linux优化" >> dist/linux/config_linux.yaml
+        echo "yolo:" >> dist/linux/config_linux.yaml
+        echo "  enabled: true" >> dist/linux/config_linux.yaml
+        echo "  model_path: \"models/best.pt\"" >> dist/linux/config_linux.yaml
+        echo "  confidence: 0.7" >> dist/linux/config_linux.yaml
+        echo "  use_fallback: true" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "# OCR配置 - Linux优化" >> dist/linux/config_linux.yaml
+        echo "ocr:" >> dist/linux/config_linux.yaml
+        echo "  tesseract:" >> dist/linux/config_linux.yaml
+        echo "    lang: \"chi_sim+eng\"" >> dist/linux/config_linux.yaml
+        echo "    config: \"--psm 6\"" >> dist/linux/config_linux.yaml
+        echo "    use_preprocessing: true" >> dist/linux/config_linux.yaml
+        echo "  text_correction:" >> dist/linux/config_linux.yaml
+        echo "    enabled: true" >> dist/linux/config_linux.yaml
+        echo "    char_corrections:" >> dist/linux/config_linux.yaml
+        echo "      \"儆\": \"警\"" >> dist/linux/config_linux.yaml
+        echo "      \"千\": \"干\"" >> dist/linux/config_linux.yaml
+        echo "      \"0\": \"O\"" >> dist/linux/config_linux.yaml
+        echo "      \"1\": \"l\"" >> dist/linux/config_linux.yaml
+        echo "      \"5\": \"S\"" >> dist/linux/config_linux.yaml
+        echo "      \"8\": \"B\"" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "# 网络监控配置 - Linux优化" >> dist/linux/config_linux.yaml
+        echo "network_monitor:" >> dist/linux/config_linux.yaml
+        echo "  enabled: true" >> dist/linux/config_linux.yaml
+        echo "  check_interval: 20" >> dist/linux/config_linux.yaml
+        echo "  timeout: 8" >> dist/linux/config_linux.yaml
+        echo "  consecutive_failures: 3" >> dist/linux/config_linux.yaml
+        echo "  tolerance_minutes: 0.3" >> dist/linux/config_linux.yaml
+        echo "  test_targets:" >> dist/linux/config_linux.yaml
+        echo "    - name: \"谷歌\"" >> dist/linux/config_linux.yaml
+        echo "      url: \"https://www.google.com\"" >> dist/linux/config_linux.yaml
+        echo "      method: \"http\"" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "# 调试配置" >> dist/linux/config_linux.yaml
+        echo "debug:" >> dist/linux/config_linux.yaml
+        echo "  save_processed_images: false" >> dist/linux/config_linux.yaml
+        echo "  save_detection_images: true" >> dist/linux/config_linux.yaml
+        echo "  verbose: true" >> dist/linux/config_linux.yaml
+        echo "" >> dist/linux/config_linux.yaml
+        echo "# Linux特定配置" >> dist/linux/config_linux.yaml
+        echo "linux:" >> dist/linux/config_linux.yaml
+        echo "  audio:" >> dist/linux/config_linux.yaml
+        echo "    use_paplay: true" >> dist/linux/config_linux.yaml
+        echo "    fallback_to_aplay: true" >> dist/linux/config_linux.yaml
+        echo "  yolo:" >> dist/linux/config_linux.yaml
+        echo "    use_cpu_only: false" >> dist/linux/config_linux.yaml
+        echo "    memory_limit: \"4GB\"" >> dist/linux/config_linux.yaml
+        echo "  gui:" >> dist/linux/config_linux.yaml
+        echo "    window_size: \"600x750\"" >> dist/linux/config_linux.yaml
+        echo "    high_dpi: true" >> dist/linux/config_linux.yaml
+        
+        # 复制原始配置文件作为备用
         cp config_with_yolo.yaml dist/linux/
+        
         cp start_monitor.sh dist/linux/
         chmod +x dist/linux/start_monitor.sh
         chmod +x dist/linux/chat_monitor_linux
@@ -97,6 +254,14 @@ jobs:
         cp -r sounds dist/linux/
         cp -r test_img dist/linux/
         cp README.md dist/linux/
+        
+        # 创建Linux专用启动脚本
+        echo "#!/bin/bash" > dist/linux/start_monitor_linux.sh
+        echo "echo \"正在启动Chat Monitor (Linux优化版)...\"" >> dist/linux/start_monitor_linux.sh
+        echo "echo \"使用Linux专用配置文件...\"" >> dist/linux/start_monitor_linux.sh
+        echo "cp config_linux.yaml config_with_yolo.yaml" >> dist/linux/start_monitor_linux.sh
+        echo "./chat_monitor_linux" >> dist/linux/start_monitor_linux.sh
+        chmod +x dist/linux/start_monitor_linux.sh
         
         # Create tar.gz package
         tar -czf chat_monitor_linux_${{ matrix.python-version }}.tar.gz -C dist/linux .
@@ -137,7 +302,82 @@ jobs:
         mkdir -p dist/macos
         cp dist/chat_monitor_macos dist/macos/
         cp dist/network_monitor_macos dist/macos/
+        
+        # 生成macOS专用配置文件
+        echo "# macOS专用配置文件 - 自动生成" > dist/macos/config_macos.yaml
+        echo "# 针对macOS环境优化的配置" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "chat_app:" >> dist/macos/config_macos.yaml
+        echo "  name: \"Mango\"" >> dist/macos/config_macos.yaml
+        echo "  target_contacts:" >> dist/macos/config_macos.yaml
+        echo "    - js_wbmalia-研发部助理" >> dist/macos/config_macos.yaml
+        echo "    - 人事小姐姐" >> dist/macos/config_macos.yaml
+        echo "    - 客户端项目" >> dist/macos/config_macos.yaml
+        echo "  fuzzy_match:" >> dist/macos/config_macos.yaml
+        echo "    enabled: true" >> dist/macos/config_macos.yaml
+        echo "    similarity_threshold: 0.5" >> dist/macos/config_macos.yaml
+        echo "    min_length: 2" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "monitor:" >> dist/macos/config_macos.yaml
+        echo "  check_interval: 1" >> dist/macos/config_macos.yaml
+        echo "  reply_wait: 3" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "# YOLO模型配置 - macOS优化" >> dist/macos/config_macos.yaml
+        echo "yolo:" >> dist/macos/config_macos.yaml
+        echo "  enabled: true" >> dist/macos/config_macos.yaml
+        echo "  model_path: \"models/best.pt\"" >> dist/macos/config_macos.yaml
+        echo "  confidence: 0.75" >> dist/macos/config_macos.yaml
+        echo "  use_fallback: true" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "# OCR配置 - macOS优化" >> dist/macos/config_macos.yaml
+        echo "ocr:" >> dist/macos/config_macos.yaml
+        echo "  tesseract:" >> dist/macos/config_macos.yaml
+        echo "    lang: \"chi_sim+eng\"" >> dist/macos/config_macos.yaml
+        echo "    config: \"--psm 6\"" >> dist/macos/config_macos.yaml
+        echo "    use_preprocessing: true" >> dist/macos/config_macos.yaml
+        echo "  text_correction:" >> dist/macos/config_macos.yaml
+        echo "    enabled: true" >> dist/macos/config_macos.yaml
+        echo "    char_corrections:" >> dist/macos/config_macos.yaml
+        echo "      \"儆\": \"警\"" >> dist/macos/config_macos.yaml
+        echo "      \"千\": \"干\"" >> dist/macos/config_macos.yaml
+        echo "      \"0\": \"O\"" >> dist/macos/config_macos.yaml
+        echo "      \"1\": \"l\"" >> dist/macos/config_macos.yaml
+        echo "      \"5\": \"S\"" >> dist/macos/config_macos.yaml
+        echo "      \"8\": \"B\"" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "# 网络监控配置 - macOS优化" >> dist/macos/config_macos.yaml
+        echo "network_monitor:" >> dist/macos/config_macos.yaml
+        echo "  enabled: true" >> dist/macos/config_macos.yaml
+        echo "  check_interval: 15" >> dist/macos/config_macos.yaml
+        echo "  timeout: 6" >> dist/macos/config_macos.yaml
+        echo "  consecutive_failures: 3" >> dist/macos/config_macos.yaml
+        echo "  tolerance_minutes: 0.2" >> dist/macos/config_macos.yaml
+        echo "  test_targets:" >> dist/macos/config_macos.yaml
+        echo "    - name: \"谷歌\"" >> dist/macos/config_macos.yaml
+        echo "      url: \"https://www.google.com\"" >> dist/macos/config_macos.yaml
+        echo "      method: \"http\"" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "# 调试配置" >> dist/macos/config_macos.yaml
+        echo "debug:" >> dist/macos/config_macos.yaml
+        echo "  save_processed_images: false" >> dist/macos/config_macos.yaml
+        echo "  save_detection_images: true" >> dist/macos/config_macos.yaml
+        echo "  verbose: true" >> dist/macos/config_macos.yaml
+        echo "" >> dist/macos/config_macos.yaml
+        echo "# macOS特定配置" >> dist/macos/config_macos.yaml
+        echo "macos:" >> dist/macos/config_macos.yaml
+        echo "  audio:" >> dist/macos/config_macos.yaml
+        echo "    use_afplay: true" >> dist/macos/config_macos.yaml
+        echo "    fallback_to_say: true" >> dist/macos/config_macos.yaml
+        echo "  yolo:" >> dist/macos/config_macos.yaml
+        echo "    use_cpu_only: false" >> dist/macos/config_macos.yaml
+        echo "    memory_limit: \"3GB\"" >> dist/macos/config_macos.yaml
+        echo "  gui:" >> dist/macos/config_macos.yaml
+        echo "    window_size: \"600x750\"" >> dist/macos/config_macos.yaml
+        echo "    high_dpi: true" >> dist/macos/config_macos.yaml
+        
+        # 复制原始配置文件作为备用
         cp config_with_yolo.yaml dist/macos/
+        
         cp start_monitor.sh dist/macos/
         chmod +x dist/macos/start_monitor.sh
         chmod +x dist/macos/chat_monitor_macos
@@ -145,6 +385,14 @@ jobs:
         cp -r sounds dist/macos/
         cp -r test_img dist/macos/
         cp README.md dist/macos/
+        
+        # 创建macOS专用启动脚本
+        echo "#!/bin/bash" > dist/macos/start_monitor_macos.sh
+        echo "echo \"正在启动Chat Monitor (macOS优化版)...\"" >> dist/macos/start_monitor_macos.sh
+        echo "echo \"使用macOS专用配置文件...\"" >> dist/macos/start_monitor_macos.sh
+        echo "cp config_macos.yaml config_with_yolo.yaml" >> dist/macos/start_monitor_macos.sh
+        echo "./chat_monitor_macos" >> dist/macos/start_monitor_macos.sh
+        chmod +x dist/macos/start_monitor_macos.sh
         
         # Create tar.gz package
         tar -czf chat_monitor_macos_${{ matrix.python-version }}.tar.gz -C dist/macos .
