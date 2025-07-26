@@ -176,4 +176,45 @@ psutil==5.9.5 ✅
 
 
 
+## 这个错误是 setuptools 和 pkg_resources 的兼容性问题。错误显示：AttributeError: _ep_map. Did you mean: '_dep_map'?
+这是 Python 3.12 + 旧版本 setuptools 的已知问题。让我修复这个问题：
+主要修复
+1. 升级setuptools
+旧版本: 可能有兼容性问题
+新版本: setuptools==68.2.2 ✅ (完全兼容Python 3.12)
+2. 升级PyInstaller
+旧版本: pyinstaller==5.13.2 ❌
+新版本: pyinstaller==6.6.0 ✅ (更好的Python 3.12支持)
+3. 安装顺序优化
+✅ 先安装 setuptools (修复兼容性)
+✅ 再安装 numpy (基础依赖)
+✅ 最后安装其他包
+如果还是有问题，尝试这个简化版本
+如果上面的版本还有问题，我们可以创建一个更简化的版本：
+build_windows_simple.bat
+简化版的特点：
+✅ 移除镜像源（避免网络问题）
+✅ 减少隐藏导入（避免兼容性问题）
+✅ 最小化依赖（只安装必需的包）
+✅ 更简单的构建配置
+
+
+## 这个错误是 setuptools 包中的 Lorem ipsum.txt 文件编码问题。这是一个已知的 Python 3.12 + setuptools 兼容性问题。
+让我创建一个完全绕过这个问题的解决方案：
+build_windows_bypass.bat
+这个绕过版本的特点：
+1. 移除有问题的setuptools
+uv pip uninstall setuptools -y
+2. 排除有问题的模块
+--exclude-module setuptools
+--exclude-module pkg_resources
+3. 使用wheel替代setuptools
+uv pip install wheel
+4. 最小化依赖
+只安装绝对必需的包，避免复杂的依赖关系。
+如果这个还不行，尝试最极端的方法
+如果绕过版本还有问题，我们可以尝试完全重新创建环境：
+build_windows_fresh.bat
+
+
 

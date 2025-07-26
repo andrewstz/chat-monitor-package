@@ -27,6 +27,10 @@ if exist *.spec del *.spec
 :: Install dependencies (using Python 3.12 compatible versions)
 echo Installing dependencies...
 
+:: Install setuptools FIRST (fix compatibility issues)
+echo Installing setuptools (Python 3.12 compatible)...
+uv pip install setuptools==68.2.2 -i https://mirrors.aliyun.com/pypi/simple/ || uv pip install setuptools==68.2.2
+
 :: Install numpy FIRST (required by other packages)
 echo Installing numpy (Python 3.12 compatible)...
 uv pip install numpy==1.26.4 -i https://mirrors.aliyun.com/pypi/simple/ || uv pip install numpy==1.26.4
@@ -53,9 +57,9 @@ uv pip install psutil==5.9.5 -i https://mirrors.aliyun.com/pypi/simple/ || uv pi
 :: Skip lap package (not essential for basic functionality)
 echo Skipping lap package (not essential)...
 
-:: Install PyInstaller
+:: Install PyInstaller (use newer version)
 echo Installing PyInstaller...
-uv pip install pyinstaller==5.13.2 -i https://mirrors.aliyun.com/pypi/simple/ || uv pip install pyinstaller==5.13.2
+uv pip install pyinstaller==6.6.0 -i https://mirrors.aliyun.com/pypi/simple/ || uv pip install pyinstaller==6.6.0
 
 :: Start building
 echo.
