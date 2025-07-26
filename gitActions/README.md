@@ -9,6 +9,7 @@ gitActions/
 ├── audio_windows_fixed.py     # Windows音频播放修复模块
 ├── config_windows.yaml        # Windows专用配置文件（本地版本）
 ├── debug_yolo_windows.py      # Windows YOLO调试脚本
+├── debug_windows_packaged.py  # Windows打包版本调试脚本
 ├── README_GitHub_Actions.md   # GitHub Actions详细指南
 ├── HOW_TO_USE.md             # 使用说明
 └── README.md                  # 本说明文档
@@ -37,12 +38,27 @@ gitActions/
   - OCR相关库检查
   - 音频播放功能测试
 
+### 4. debug_windows_packaged.py - Windows打包版本调试
+- **功能**: 诊断Windows exe文件中的问题
+- **测试项目**:
+  - 系统信息和文件结构
+  - 库导入测试
+  - 模型路径解析
+  - argparse错误诊断
+  - 音频功能测试
+
 ## 🚀 使用方法
 
 ### Windows问题诊断
 ```bash
 # 在Windows虚拟机上运行
 python gitActions/debug_yolo_windows.py
+```
+
+### Windows打包版本调试
+```bash
+# 在Windows虚拟机上运行打包版本调试
+python gitActions/debug_windows_packaged.py
 ```
 
 ### 音频播放测试
@@ -61,8 +77,14 @@ cp gitActions/config_windows.yaml config_with_yolo.yaml
 
 ### YOLO模型问题
 1. 运行 `debug_yolo_windows.py` 诊断
-2. 检查PyTorch和Ultralytics版本
-3. 验证模型文件完整性
+2. 运行 `debug_windows_packaged.py` 检查打包版本
+3. 检查PyTorch和Ultralytics版本
+4. 验证模型文件完整性
+
+### argparse错误
+1. 运行 `debug_windows_packaged.py` 诊断
+2. 检查stdout/stderr重定向
+3. 验证命令行参数处理
 
 ### 音频播放问题
 1. 运行 `audio_windows_fixed.py` 测试
@@ -83,16 +105,19 @@ cp gitActions/config_windows.yaml config_with_yolo.yaml
 - `config_windows.yaml` - Windows优化配置（自动生成）
 - `start_monitor_windows.bat` - Windows专用启动脚本
 - `config_with_yolo.yaml` - 原始配置文件（备用）
+- `models/` - YOLO模型文件目录
 
 #### Linux构建包包含：
 - `config_linux.yaml` - Linux优化配置（自动生成）
 - `start_monitor_linux.sh` - Linux专用启动脚本
 - `config_with_yolo.yaml` - 原始配置文件（备用）
+- `models/` - YOLO模型文件目录
 
 #### macOS构建包包含：
 - `config_macos.yaml` - macOS优化配置（自动生成）
 - `start_monitor_macos.sh` - macOS专用启动脚本
 - `config_with_yolo.yaml` - 原始配置文件（备用）
+- `models/` - YOLO模型文件目录
 
 ### 构建产物
 - Windows: `chat_monitor_windows.exe`
@@ -106,6 +131,12 @@ cp gitActions/config_windows.yaml config_with_yolo.yaml
 - [快速开始指南](../QUICK_START.md)
 
 ## 📝 更新日志
+
+### v1.3.0 (2024-07-26)
+- 添加Windows打包版本调试脚本
+- 修复argparse在PyInstaller环境中的问题
+- 优化模型路径解析逻辑
+- 确保所有平台构建包包含models目录
 
 ### v1.2.0 (2024-07-26)
 - GitHub Actions自动生成平台专用配置
@@ -145,6 +176,26 @@ cp gitActions/config_windows.yaml config_with_yolo.yaml
 - 音频：afplay
 - 内存限制：3GB
 - GPU可用
+
+## 🚨 常见问题解决
+
+### 1. argparse错误
+**错误**: `'NoneType' object has no attribute 'write'`
+**解决**: 已修复PyInstaller环境下的stdout/stderr重定向问题
+
+### 2. YOLO模型找不到
+**错误**: `无法找到YOLO模型文件:models/best.pt`
+**解决**: 
+- 确保构建包包含models目录
+- 优化模型路径解析逻辑
+- 添加多种路径查找策略
+
+### 3. 音频播放失败
+**错误**: `播放进程不存在提醒音`
+**解决**: 
+- 使用PowerShell音频播放
+- 添加系统提示音备用方案
+- 检查音频驱动和权限
 
 
 

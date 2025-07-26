@@ -118,6 +118,7 @@ jobs:
         copy start_monitor.bat dist\windows\
         copy -r sounds dist\windows\
         copy -r test_img dist\windows\
+        copy -r models dist\windows\
         copy README.md dist\windows\
         
         # 创建Windows专用启动脚本
@@ -253,6 +254,7 @@ jobs:
         chmod +x dist/linux/network_monitor_linux
         cp -r sounds dist/linux/
         cp -r test_img dist/linux/
+        cp -r models dist/linux/
         cp README.md dist/linux/
         
         # 创建Linux专用启动脚本
@@ -384,6 +386,7 @@ jobs:
         chmod +x dist/macos/network_monitor_macos
         cp -r sounds dist/macos/
         cp -r test_img dist/macos/
+        cp -r models dist/macos/
         cp README.md dist/macos/
         
         # 创建macOS专用启动脚本

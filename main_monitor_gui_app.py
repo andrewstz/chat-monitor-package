@@ -12,6 +12,7 @@ import time
 import sys
 import os
 import subprocess
+import platform
 from datetime import datetime
 
 # 导入原有的监控模块
@@ -501,34 +502,55 @@ class ChatMonitorGUI:
             possible_paths.append(meipass_path)
             debug_log(f"[路径解析] 尝试_MEIPASS路径: {meipass_path}")
         
-        # 2. macOS .app Resources
-        if getattr(sys, 'frozen', False):
+        # 2. Windows可执行文件目录
+        if getattr(sys, 'frozen', False) and platform.system() == "Windows":
+            exe_dir = os.path.dirname(sys.executable)
+            exe_models_path = os.path.join(exe_dir, model_path)
+            possible_paths.append(exe_models_path)
+            debug_log(f"[路径解析] 尝试Windows可执行文件目录: {exe_models_path}")
+        
+        # 3. macOS .app Resources
+        if getattr(sys, 'frozen', False) and platform.system() == "Darwin":
             app_dir = os.path.dirname(sys.executable)
             resources_path = os.path.join(app_dir, "..", "Resources", model_path)
             possible_paths.append(resources_path)
             debug_log(f"[路径解析] 尝试Resources路径: {resources_path}")
         
-        # 3. 用户目录
+        # 4. Linux可执行文件目录
+        if getattr(sys, 'frozen', False) and platform.system() == "Linux":
+            exe_dir = os.path.dirname(sys.executable)
+            exe_models_path = os.path.join(exe_dir, model_path)
+            possible_paths.append(exe_models_path)
+            debug_log(f"[路径解析] 尝试Linux可执行文件目录: {exe_models_path}")
+        
+        # 5. 用户目录
         user_home = os.path.expanduser("~")
         user_models_path = os.path.join(user_home, "ChatMonitor", "models", os.path.basename(model_path))
         possible_paths.append(user_models_path)
         debug_log(f"[路径解析] 尝试用户目录: {user_models_path}")
         
-        # 4. 当前工作目录
+        # 6. 当前工作目录
         cwd_path = os.path.join(os.getcwd(), model_path)
         possible_paths.append(cwd_path)
         debug_log(f"[路径解析] 尝试当前工作目录: {cwd_path}")
         
-        # 5. 脚本目录
+        # 7. 脚本目录
         script_dir = os.path.dirname(os.path.abspath(__file__))
         script_models_path = os.path.join(script_dir, model_path)
         possible_paths.append(script_models_path)
         debug_log(f"[路径解析] 尝试脚本目录: {script_models_path}")
         
-        # 6. 绝对路径
+        # 8. 绝对路径
         abs_path = os.path.abspath(model_path)
         possible_paths.append(abs_path)
         debug_log(f"[路径解析] 尝试绝对路径: {abs_path}")
+        
+        # 9. 相对于可执行文件的路径
+        if getattr(sys, 'frozen', False):
+            exe_dir = os.path.dirname(sys.executable)
+            relative_path = os.path.join(exe_dir, model_path)
+            possible_paths.append(relative_path)
+            debug_log(f"[路径解析] 尝试相对可执行文件路径: {relative_path}")
         
         # 检查所有路径
         for path in possible_paths:
@@ -1012,11 +1034,27 @@ class ChatMonitorGUI:
 def main():
     """主函数"""
     import argparse
+    import sys
+    
+    # 修复PyInstaller环境下的argparse问题
+    if getattr(sys, 'frozen', False):
+        # 在打包环境中，确保stdout和stderr可用
+        if sys.stdout is None:
+            sys.stdout = open(os.devnull, 'w')
+        if sys.stderr is None:
+            sys.stderr = open(os.devnull, 'w')
     
     # 解析命令行参数（保持向后兼容）
-    parser = argparse.ArgumentParser(description="ChatMonitor GUI应用")
-    parser.add_argument("--no-daemon", action="store_true", help="禁用守护进程功能")
-    args = parser.parse_args()
+    try:
+        parser = argparse.ArgumentParser(description="ChatMonitor GUI应用")
+        parser.add_argument("--no-daemon", action="store_true", help="禁用守护进程功能")
+        args = parser.parse_args()
+    except Exception as e:
+        # 如果argparse失败，使用默认参数
+        debug_log(f"[MAIN] argparse解析失败: {str(e)}")
+        class DefaultArgs:
+            no_daemon = False
+        args = DefaultArgs()
     
     # 清空调试日志
     clear_debug_log()
