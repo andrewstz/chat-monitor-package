@@ -174,8 +174,9 @@ class LoadingWindow:
         self.root.update()
 
 class ChatMonitorGUI:
-    def __init__(self, daemon_mode=False):
+    def __init__(self, daemon_mode=False, enable_daemon=True):
         self.daemon_mode = daemon_mode
+        self.enable_daemon = enable_daemon
         self.root = tk.Tk()
         self.root.title("ChatMonitor 弹框监控")
         self.root.geometry("400x300")
@@ -204,12 +205,20 @@ class ChatMonitorGUI:
         self.monitoring = False
         self.monitor_thread = None
         
+        # 初始化守护进程
+        self.daemon = None
+        self.daemon_thread = None
+        
         # 创建 GUI
         self.create_gui()
         
         # 守护进程模式下的特殊处理
         if self.daemon_mode:
             self.setup_daemon_mode()
+        
+        # 如果启用守护进程，启动内部守护进程
+        if self.enable_daemon and not self.daemon_mode:
+            self.start_internal_daemon()
     
     def setup_daemon_mode(self):
         """设置守护进程模式"""
@@ -522,12 +531,47 @@ class ChatMonitorGUI:
                 self.log_message(f"❌ 监控过程中发生错误: {e}")
                 time.sleep(5)
     
+    def start_internal_daemon(self):
+        """启动内部守护进程"""
+        try:
+            from daemon_monitor import ChatMonitorDaemon
+            
+            self.daemon = ChatMonitorDaemon()
+            self.daemon_thread = threading.Thread(target=self._run_daemon, daemon=True)
+            self.daemon_thread.start()
+            
+            self.log_message("🛡️ 内部守护进程已启动")
+        except Exception as e:
+            self.log_message(f"❌ 启动内部守护进程失败: {e}")
+    
+    def _run_daemon(self):
+        """运行守护进程"""
+        try:
+            self.daemon.start()
+            while self.daemon.running:
+                time.sleep(1)
+        except Exception as e:
+            self.log_message(f"❌ 守护进程运行失败: {e}")
+    
+    def stop_internal_daemon(self):
+        """停止内部守护进程"""
+        if self.daemon:
+            try:
+                self.daemon.stop()
+                self.log_message("🛡️ 内部守护进程已停止")
+            except Exception as e:
+                self.log_message(f"❌ 停止内部守护进程失败: {e}")
+    
     def run(self):
         """运行 GUI 应用"""
         try:
             self.root.mainloop()
         except Exception as e:
             print(f"GUI 运行失败: {e}")
+        finally:
+            # 确保停止内部守护进程
+            if self.enable_daemon:
+                self.stop_internal_daemon()
 
 def main():
     """主函数"""
@@ -535,6 +579,7 @@ def main():
     parser = argparse.ArgumentParser(description="ChatMonitor 弹框监控程序")
     parser.add_argument("--daemon", action="store_true", help="以守护进程模式运行")
     parser.add_argument("--daemon-monitor", action="store_true", help="启动守护进程监控器")
+    parser.add_argument("--no-daemon", action="store_true", help="禁用守护进程功能")
     
     args = parser.parse_args()
     
@@ -584,7 +629,7 @@ def main():
             raise
         
         # 启动 GUI 应用
-        app = ChatMonitorGUI(daemon_mode=args.daemon)
+        app = ChatMonitorGUI(daemon_mode=args.daemon, enable_daemon=not args.no_daemon)
         app.run()
 
 def create_main_window(root):

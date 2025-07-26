@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ChatMonitor 守护进程模块
-可以集成到打包的应用中，提供自动重启和系统通知功能
+ChatMonitor 守护进程启动器
+独立运行，不依赖 tkinter
 """
 
 import os
@@ -14,9 +14,8 @@ import subprocess
 import psutil
 import platform
 from datetime import datetime
-from pathlib import Path
 
-class ChatMonitorDaemon:
+class DaemonLauncher:
     def __init__(self):
         self.running = False
         self.main_process = None
@@ -182,11 +181,6 @@ class ChatMonitorDaemon:
             self.log_message("ERROR", f"启动主程序失败: {e}")
             return None
     
-    def is_internal_daemon(self):
-        """检查是否为内部守护进程模式"""
-        # 检查是否在主程序内部运行
-        return hasattr(sys, 'frozen') or 'main_monitor_gui_app.py' in sys.argv[0]
-    
     def is_process_running(self):
         """检查主程序是否在运行"""
         if not self.main_process:
@@ -204,12 +198,6 @@ class ChatMonitorDaemon:
         
         while self.running:
             try:
-                # 如果是内部守护进程，不启动外部进程
-                if self.is_internal_daemon():
-                    # 内部守护进程只监控，不重启
-                    time.sleep(10)
-                    continue
-                
                 if not self.is_process_running():
                     current_time = time.time()
                     
@@ -311,7 +299,7 @@ class ChatMonitorDaemon:
 
 def main():
     """主函数"""
-    print("🚀 ChatMonitor 守护进程")
+    print("🚀 ChatMonitor 守护进程启动器")
     print("=" * 40)
     
     # 检查依赖
@@ -323,13 +311,13 @@ def main():
         return
     
     # 创建并启动守护进程
-    daemon = ChatMonitorDaemon()
+    launcher = DaemonLauncher()
     
     try:
-        daemon.start()
+        launcher.start()
         
         # 保持主线程运行
-        while daemon.running:
+        while launcher.running:
             time.sleep(1)
             
     except KeyboardInterrupt:
@@ -337,7 +325,7 @@ def main():
     except Exception as e:
         print(f"❌ 守护进程运行失败: {e}")
     finally:
-        daemon.stop()
+        launcher.stop()
 
 if __name__ == "__main__":
     main() 
