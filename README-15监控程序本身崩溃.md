@@ -205,12 +205,19 @@ PyInstaller打包时会自动包含tkinter：
 
 
 
-
-
-
-
-
-
+# 你只是增加了一个守护进程，为啥和main对比差异那么大，可不可以在main的代码的基础上增加一个守护程序的代码（独立文件导入）尽可能减少原代码的修改
+让我重新设计一个更简洁的方案：
+1. 创建独立的守护进程模块
+simple_daemon.py
+2. 创建简单的启动脚本
+start_with_daemon.sh
+chmod +x start_with_daemon.sh
+3. 创建Windows版本的启动脚本
+start_with_daemon.bat
+4. 创建使用说明文档
+README_守护进程使用说明.md
+5. 测试新的守护进程方案
+conda activate paddle && python simple_daemon.py
 
 
 
