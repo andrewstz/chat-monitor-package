@@ -371,6 +371,11 @@ chmod +x stop_all.sh
     # 查看守护进程日志
     tail -f /tmp/chatmonitor_daemon.log
 现在根目录干净整洁，所有守护进程相关文件都整理到了 daemon 目录中，只保留了必要的启动和停止脚本！
+test_settings_window_exclusion.py
+现在让我运行测试来验证排除功能： cd /Users/andrewstz/Documents/study/promgramLang/python/work/chat_monitor_ai/yolov5-popup-detector/doPackage && python3 test_settings_window_exclusion.py
+让我创建一个独立的测试函数，不依赖其他模块：
+test_settings_window_exclusion.py
+python3 test_settings_window_exclusion.py
 
 
 

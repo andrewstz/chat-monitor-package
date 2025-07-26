@@ -404,8 +404,71 @@ def detect_and_ocr_with_yolo(image, yolo_manager, ocr_lang, ocr_psm):
         x1, y1, x2, y2 = det['bbox']
         popup_img = image[y1:y2, x1:x2]
         text = pytesseract.image_to_string(popup_img, lang=ocr_lang, config=f"--psm {ocr_psm}")
+        
+        # 检查是否为发信人设置窗口，如果是则跳过
+        if is_contacts_settings_window(text):
+            debug_log(f"[DETECTION] 跳过发信人设置窗口: {text[:50]}...")
+            continue
+            
         results.append({'text': text, 'bbox': det['bbox'], 'confidence': det['confidence']})
     return results
+
+def is_contacts_settings_window(text):
+    """
+    检查文本是否为发信人设置窗口
+    通过关键词和特征来识别
+    """
+    if not text:
+        return False
+    
+    # 转换为小写进行匹配
+    text_lower = text.lower()
+    
+    # 发信人设置窗口的特征关键词
+    settings_keywords = [
+        "发信人设置",
+        "联系人设置",
+        "联系人列表",
+        "联系人设置说明",
+        "每行输入一个联系人",
+        "支持模糊匹配",
+        "建议添加常用",
+        "修改后点击保存",
+        "保存联系人",
+        "清空列表",
+        "取消",
+        "已加载",
+        "个联系人"
+    ]
+    
+    # 检查是否包含设置窗口的特征
+    for keyword in settings_keywords:
+        if keyword.lower() in text_lower:
+            debug_log(f"[DETECTION] 检测到设置窗口关键词: {keyword}")
+            return True
+    
+    # 检查是否包含典型的设置窗口结构
+    # 发信人设置窗口通常包含说明文本和联系人列表
+    if ("说明" in text_lower and "联系人" in text_lower) or \
+       ("设置" in text_lower and "联系人" in text_lower) or \
+       ("保存" in text_lower and "联系人" in text_lower) or \
+       ("清空" in text_lower and "列表" in text_lower):
+        debug_log(f"[DETECTION] 检测到设置窗口结构特征")
+        return True
+    
+    # 检查是否包含典型的设置窗口按钮
+    if ("保存联系人" in text_lower or "清空列表" in text_lower or "取消" in text_lower):
+        debug_log(f"[DETECTION] 检测到设置窗口按钮")
+        return True
+    
+    # 检查是否包含设置窗口的说明文本模式
+    if ("每行输入" in text_lower and "联系人" in text_lower) or \
+       ("模糊匹配" in text_lower and "相似度" in text_lower) or \
+       ("建议添加" in text_lower and "常用" in text_lower):
+        debug_log(f"[DETECTION] 检测到设置窗口说明文本")
+        return True
+    
+    return False
 
 class YOLOModelManager:
     def __init__(self, model_path, confidence=0.35):
