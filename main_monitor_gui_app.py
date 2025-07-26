@@ -625,7 +625,9 @@ class ChatMonitorGUI:
                 network_enabled = network_config.get("enabled", True)
                 network_check_interval = network_config.get("check_interval", 10)
                 
-                if network_enabled and (current_time - last_network_check_time) >= network_check_interval:
+                # 检查GUI开关状态和配置文件状态
+                if (self.network_monitor_enabled and network_enabled and 
+                    (current_time - last_network_check_time) >= network_check_interval):
                     check_network_with_alert()
                     last_network_check_time = current_time
                 
@@ -650,7 +652,8 @@ class ChatMonitorGUI:
                                             match_result = FUZZY_MATCHER.match_sender(text)
                                             if match_result:
                                                 contact, sender, similarity = match_result
-                                                self.log_message(f"🎯 检测到弹框: {text[:50]}... -> 匹配: {contact} (相似度: {similarity:.2f})")
+                                                # {text[:50]}... -> 匹配: {contact} 
+                                                self.log_message(f"🎯 检测到弹框: (相似度: {similarity:.2f})")
                                                 play_sound("contact")
                                             else:
                                                 self.log_message(f"📝 检测到弹框但无匹配: {text[:50]}...")

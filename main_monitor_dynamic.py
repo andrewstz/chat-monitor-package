@@ -318,11 +318,23 @@ def check_process(app_name):
 
 def check_network():
     """简单网络检测"""
-    try:
-        response = requests.head("https://www.google.com", timeout=5)
-        return response.status_code == 200
-    except requests.exceptions.RequestException:
-        return False
+    # 尝试多个网站，提高检测可靠性
+    test_urls = [
+        "https://www.baidu.com",
+        "https://www.qq.com", 
+        "https://www.taobao.com",
+        "https://www.google.com"
+    ]
+    
+    for url in test_urls:
+        try:
+            response = requests.head(url, timeout=3)
+            if response.status_code == 200:
+                return True
+        except requests.exceptions.RequestException:
+            continue
+    
+    return False
 
 def check_network_with_alert():
     """网络检测带警报功能"""
