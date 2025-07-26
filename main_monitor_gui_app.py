@@ -179,7 +179,7 @@ class ChatMonitorGUI:
         self.enable_daemon = enable_daemon
         self.root = tk.Tk()
         self.root.title("ChatMonitor 弹框监控")
-        self.root.geometry("400x300")
+        self.root.geometry("700x600")
         
         # 设置窗口图标
         try:
@@ -205,9 +205,17 @@ class ChatMonitorGUI:
         self.monitoring = False
         self.monitor_thread = None
         
+        # 初始化监控开关状态
+        self.app_monitor_enabled = True
+        self.network_monitor_enabled = True
+        
         # 初始化守护进程
         self.daemon = None
         self.daemon_thread = None
+        
+        # 初始化YOLO管理器（后台初始化）
+        self.yolo_manager = None
+        self.root.after(1000, self._init_yolo_manager)  # 1秒后后台初始化
         
         # 创建 GUI
         self.create_gui()
@@ -216,9 +224,108 @@ class ChatMonitorGUI:
         if self.daemon_mode:
             self.setup_daemon_mode()
         
-        # 如果启用守护进程，启动内部守护进程
+        # 如果启用守护进程，启动内部守护进程（延迟启动，避免界面卡顿）
         if self.enable_daemon and not self.daemon_mode:
-            self.start_internal_daemon()
+            # 默认不启动内部守护进程，避免界面问题
+            # self.root.after(2000, self.start_internal_daemon)  # 2秒后启动
+            pass
+    
+    def _init_yolo_manager(self):
+        """初始化YOLO管理器"""
+        try:
+            from main_monitor_dynamic import YOLOModelManager
+            
+            # 获取配置
+            config = self.config_manager.load_config()
+            yolo_config = config.get("yolo_model", {})
+            yolo_enabled = yolo_config.get("enabled", True)
+            
+            if not yolo_enabled:
+                self.log_message("⚠️ YOLO模型已禁用")
+                return
+            
+            yolo_model_path = yolo_config.get("model_path", "models/best.pt")
+            yolo_confidence = yolo_config.get("confidence", 0.35)
+            
+            # 解析模型路径
+            resolved_model_path = self._resolve_model_path(yolo_model_path)
+            
+            if resolved_model_path:
+                debug_log("[INIT] 创建YOLOModelManager实例...")
+                
+                # 在后台线程中初始化YOLO管理器
+                def init_yolo():
+                    try:
+                        debug_log("[INIT] 开始加载YOLO模型...")
+                        self.yolo_manager = YOLOModelManager(resolved_model_path, yolo_confidence)
+                        
+                        if self.yolo_manager.initialized:
+                            self.log_message("✅ YOLO模型初始化成功")
+                            debug_log("[INIT] YOLO模型初始化成功")
+                        else:
+                            self.log_message("❌ YOLO模型初始化失败")
+                            debug_log("[INIT] YOLO模型初始化失败")
+                    except Exception as e:
+                        error_msg = f"❌ YOLO模型初始化失败: {e}"
+                        self.log_message(error_msg)
+                        debug_log(f"[INIT] {error_msg}")
+                        import traceback
+                        debug_log(f"[INIT] 错误详情: {traceback.format_exc()}")
+                
+                # 启动后台线程
+                threading.Thread(target=init_yolo, daemon=True).start()
+            else:
+                self.log_message("❌ 未找到YOLO模型文件")
+                
+        except Exception as e:
+            self.log_message(f"❌ YOLO管理器初始化失败: {e}")
+    
+    def _resolve_model_path(self, model_path):
+        """解析模型路径"""
+        import sys
+        import os
+        
+        # 如果是绝对路径且存在，直接返回
+        if os.path.isabs(model_path) and os.path.exists(model_path):
+            return model_path
+        
+        # 可能的路径列表
+        possible_paths = []
+        
+        # 如果是打包后的应用程序
+        if getattr(sys, 'frozen', False):
+            # 尝试 _MEIPASS 路径
+            meipass_path = os.path.join(sys._MEIPASS, model_path)
+            possible_paths.append(meipass_path)
+            
+            # 尝试 Resources 路径
+            resources_path = os.path.join(sys._MEIPASS, "Resources", model_path)
+            possible_paths.append(resources_path)
+        
+        # 尝试用户目录
+        user_models_path = os.path.expanduser(f"~/models/{model_path}")
+        possible_paths.append(user_models_path)
+        
+        # 尝试当前工作目录
+        cwd_path = os.path.join(os.getcwd(), model_path)
+        possible_paths.append(cwd_path)
+        
+        # 尝试脚本目录
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        script_models_path = os.path.join(script_dir, model_path)
+        possible_paths.append(script_models_path)
+        
+        # 尝试绝对路径
+        possible_paths.append(model_path)
+        
+        # 检查每个路径
+        for path in possible_paths:
+            if os.path.exists(path):
+                debug_log(f"[INIT] ✅ 找到模型文件: {path}")
+                return path
+        
+        debug_log(f"[INIT] ❌ 未找到模型文件: {model_path}")
+        return None
     
     def setup_daemon_mode(self):
         """设置守护进程模式"""
@@ -321,8 +428,32 @@ class ChatMonitorGUI:
         log_frame = ttk.LabelFrame(main_frame, text="监控日志", padding="5")
         log_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         
-        self.log_text = scrolledtext.ScrolledText(log_frame, height=8, width=50)
+        self.log_text = scrolledtext.ScrolledText(log_frame, height=15, width=70)
         self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # 监控开关框架
+        switch_frame = ttk.LabelFrame(main_frame, text="监控开关", padding="5")
+        switch_frame.grid(row=5, column=0, pady=(10, 0), sticky="ew")
+        
+        # 应用监控开关
+        self.app_monitor_var = tk.BooleanVar(value=True)
+        self.app_monitor_check = ttk.Checkbutton(
+            switch_frame,
+            text="应用监控",
+            variable=self.app_monitor_var,
+            command=self.on_app_monitor_toggle
+        )
+        self.app_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # 网络监控开关
+        self.network_monitor_var = tk.BooleanVar(value=True)
+        self.network_monitor_check = ttk.Checkbutton(
+            switch_frame,
+            text="网络监控",
+            variable=self.network_monitor_var,
+            command=self.on_network_monitor_toggle
+        )
+        self.network_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
         
         # 配置网格权重
         self.root.columnconfigure(0, weight=1)
@@ -378,6 +509,16 @@ class ChatMonitorGUI:
         
         self.log_message("⏸️ 监控已停止")
     
+    def on_app_monitor_toggle(self):
+        """应用监控开关状态改变时触发"""
+        self.app_monitor_enabled = self.app_monitor_var.get()
+        self.log_message(f"应用监控开关状态: {'开启' if self.app_monitor_enabled else '关闭'}")
+    
+    def on_network_monitor_toggle(self):
+        """网络监控开关状态改变时触发"""
+        self.network_monitor_enabled = self.network_monitor_var.get()
+        self.log_message(f"网络监控开关状态: {'开启' if self.network_monitor_enabled else '关闭'}")
+    
     def log_message(self, message):
         """记录日志消息"""
         timestamp = time.strftime("%H:%M:%S")
@@ -398,26 +539,26 @@ class ChatMonitorGUI:
     
     def open_contacts_settings(self):
         """打开发信人设置"""
-        self.contacts_settings.show()
+        self.contacts_settings.open_contacts_settings()
     
     def open_network_settings(self):
         """打开网络监控设置"""
-        self.network_settings.show()
+        self.network_settings.open_network_settings()
     
     def open_popup_settings(self):
         """打开弹框监控设置"""
-        self.popup_settings.show()
+        self.popup_settings.open_popup_settings()
     
     def on_contacts_saved(self):
         """联系人保存回调"""
         try:
-            # 更新目标联系人
-            update_target_contacts()
-            
-            # 获取当前联系人列表用于显示
+            # 获取当前联系人列表
             config_manager = get_config_manager()
             config = config_manager.load_config()
-            target_contacts = config.get("target_contacts", [])
+            target_contacts = config.get("chat_app", {}).get("target_contacts", [])
+            
+            # 更新目标联系人
+            update_target_contacts(target_contacts)
             
             # 记录日志（逗号分隔）
             contacts_str = ", ".join(target_contacts) if target_contacts else "无"
@@ -464,9 +605,8 @@ class ChatMonitorGUI:
         # 导入监控模块
         from main_monitor_dynamic import (
             get_config, check_network_with_alert, 
-            check_app_process, take_screenshot, 
-            detect_popups_with_yolo, extract_text_from_image,
-            FUZZY_MATCHER, play_sound, safe_add_detection_result
+            check_process, screenshot, 
+            detect_and_ocr_with_yolo, FUZZY_MATCHER, play_sound
         )
         
         # 初始化时间变量
@@ -495,32 +635,27 @@ class ChatMonitorGUI:
                 
                 if (current_time - last_popup_check_time) >= check_interval:
                     # 截图
-                    screenshot = take_screenshot()
-                    if screenshot is not None:
+                    img = screenshot()
+                    if img is not None:
                         # YOLO 检测弹框
-                        detection_results = detect_popups_with_yolo(screenshot)
-                        
-                        if detection_results:
-                            # 对每个检测到的弹框进行 OCR
-                            for result in detection_results:
-                                x1, y1, x2, y2, confidence, class_id = result
-                                
-                                # 提取文本
-                                text = extract_text_from_image(screenshot, (x1, y1, x2, y2))
-                                
-                                if text:
-                                    # 模糊匹配
-                                    match_result = FUZZY_MATCHER.find_best_match(text)
-                                    
-                                    if match_result:
-                                        # 匹配成功，播放声音
-                                        play_sound("alert")
-                                        self.log_message(f"🎯 检测到弹框: {text} -> 匹配: {match_result}")
-                                        safe_add_detection_result(text, match_result)
-                                    else:
-                                        self.log_message(f"📝 检测到弹框但无匹配: {text}")
-                                else:
-                                    self.log_message(f"🖼️ 检测到弹框但无文本: 置信度 {confidence:.2f}")
+                        if hasattr(self, 'yolo_manager') and self.yolo_manager and self.yolo_manager.initialized:
+                            results = detect_and_ocr_with_yolo(img, self.yolo_manager, "chi_sim+eng", "6")
+                            
+                            if results:
+                                for result in results:
+                                    text = result.get('text', '')
+                                    if text:
+                                        # 模糊匹配
+                                        if FUZZY_MATCHER:
+                                            match_result = FUZZY_MATCHER.match_sender(text)
+                                            if match_result:
+                                                contact, sender, similarity = match_result
+                                                self.log_message(f"🎯 检测到弹框: {text[:50]}... -> 匹配: {contact} (相似度: {similarity:.2f})")
+                                                play_sound("contact")
+                                            else:
+                                                self.log_message(f"📝 检测到弹框但无匹配: {text[:50]}...")
+                                        else:
+                                            self.log_message(f"📝 检测到弹框: {text[:50]}...")
                     
                     last_popup_check_time = current_time
                 
@@ -534,6 +669,10 @@ class ChatMonitorGUI:
     def start_internal_daemon(self):
         """启动内部守护进程"""
         try:
+            # 检查是否已经启动
+            if hasattr(self, 'daemon') and self.daemon:
+                return
+            
             from daemon_monitor import ChatMonitorDaemon
             
             self.daemon = ChatMonitorDaemon()

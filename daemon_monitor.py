@@ -185,7 +185,7 @@ class ChatMonitorDaemon:
     def is_internal_daemon(self):
         """检查是否为内部守护进程模式"""
         # 检查是否在主程序内部运行
-        return hasattr(sys, 'frozen') or 'main_monitor_gui_app.py' in sys.argv[0]
+        return hasattr(sys, 'frozen') or 'main_monitor_gui_app.py' in sys.argv[0] or 'main_monitor_gui_app.py' in sys.executable
     
     def is_process_running(self):
         """检查主程序是否在运行"""
