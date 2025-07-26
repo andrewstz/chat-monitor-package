@@ -218,3 +218,85 @@ build_windows_fresh.bat
 
 
 
+# 这次倒是构建成功了，但是包好小（才16M多），而且运行报错，确定是完整可运行的包吗
+看到构建成功了，但是运行时缺少 psutil 模块。这说明 PyInstaller 没有正确收集所有依赖。16MB 的包确实偏小，正常应该包含所有依赖。
+让我修复这个问题： build_windows_complete.bat
+问题分析
+您遇到的问题是因为 PyInstaller 没有正确收集所有依赖。16MB 的包确实太小了，正常应该包含：
+numpy: ~50-100MB
+opencv-python: ~50-100MB
+ultralytics: ~50-100MB
+其他依赖: ~20-50MB
+总计应该 200-400MB，而不是16MB
+这个脚本的特点：
+✅ 强制收集所有依赖: 使用 --collect-all 确保包含完整包
+✅ 明确导入所有模块: 使用 --hidden-import 确保每个模块都被包含
+✅ 包含额外依赖: 添加了 pytesseract, fuzzywuzzy 等可能需要的包
+✅ 排除问题模块: 排除 setuptools 和 pkg_resources
+2. 如果还有问题，检查依赖
+check_dependencies.bat
+建议步骤：
+1. 先检查依赖
+check_dependencies.bat
+2. 使用完整版构建
+build_windows_complete.bat
+
+
+## 有影响！ ultralytics 模块缺失会严重影响应用功能。
+从检查结果看：
+✅ 正常: psutil, cv2, numpy, PIL, requests, yaml, tkinter
+❌ 缺失: ultralytics - 这是YOLO弹框检测的核心模块
+问题影响
+弹框检测功能失效 - 无法识别弹框
+打包后运行错误 - 缺少关键依赖
+功能不完整 - 主要监控功能无法工作
+解决方案
+让我修复依赖安装问题：
+fix_ultralytics.bat
+修复步骤
+1. 先修复 ultralytics
+fix_ultralytics.bat
+2. 重新检查依赖
+check_dependencies.bat
+3. 如果修复成功，重新构建
+build_windows_complete.bat
+如果 ultralytics 还是装不上
+可能是网络或权限问题，尝试这些方法：
+方法A: 使用conda
+conda activate paddle
+conda install -c conda-forge ultralytics
+方法B: 离线安装
+    # 下载wheel文件
+    pip download ultralytics==8.0.196 -d ./wheels
+    # 安装本地文件
+    pip install ./wheels/ultralytics-8.0.196-py3-none-any.whl
+
+看到您遇到了两个问题：
+问题1: ultralytics安装成功 ✅
+从第一个图片看，Method 2使用镜像源成功安装了ultralytics，这很好！
+问题2: setuptools编码错误 ❌
+第二个和第三个图片显示又出现了之前的UnicodeDecodeError，这是setuptools的兼容性问题。
+解决方案
+既然ultralytics已经安装成功，现在需要绕过setuptools问题来构建：
+build_windows_final.bat
+这个版本的特点：
+1. 完全移除有问题的setuptools
+uv pip uninstall setuptools pkg_resources -y
+2. 安装最小化setuptools
+uv pip install setuptools==68.2.2 --no-deps
+3. 验证ultralytics已安装
+python -c "import ultralytics; print('ultralytics version:', ultralytics.__version__)"
+4. 排除所有问题模块
+--exclude-module setuptools
+--exclude-module pkg_resources  
+--exclude-module _distutils_hack
+预期结果
+✅ 包大小: 200-400MB（包含所有依赖）
+✅ 功能完整: 包含ultralytics、psutil等所有模块
+✅ 无编码错误: 绕过setuptools问题
+如果这个版本还有问题，我们可以考虑使用conda环境或创建不依赖YOLO的简化版本。
+请运行 build_windows_final.bat 试试！
+
+
+
+
