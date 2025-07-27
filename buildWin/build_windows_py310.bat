@@ -2,20 +2,20 @@
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo ChatMonitor Windows Build (Compatible)
+echo ChatMonitor Windows Build (Python 3.10)
 echo ========================================
 
-:: Check if compatible environment exists
-if not exist "..\.venv_compatible" (
-    echo ERROR: Compatible environment not found!
-    echo Please run create_env_compatible.bat first
+:: Check if Python 3.10 environment exists
+if not exist "..\.venv_py310" (
+    echo ERROR: Python 3.10 environment not found!
+    echo Please run create_py310_env.bat first
     pause
     exit /b 1
 )
 
-:: Activate compatible environment
-echo Activating compatible environment...
-call ..\.venv_compatible\Scripts\activate.bat
+:: Activate Python 3.10 environment
+echo Activating Python 3.10 environment...
+call ..\.venv_py310\Scripts\activate.bat
 
 :: Verify Python version
 echo.
@@ -86,8 +86,6 @@ pyinstaller ^
     --collect-all yaml ^
     --collect-all psutil ^
     --collect-all tkinter ^
-    --exclude-module setuptools ^
-    --exclude-module pkg_resources ^
     ..\main_monitor_gui_app.py
 
 :: Check build result

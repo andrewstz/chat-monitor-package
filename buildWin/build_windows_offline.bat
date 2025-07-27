@@ -2,20 +2,20 @@
 setlocal enabledelayedexpansion
 
 echo ========================================
-echo ChatMonitor Windows Build (Compatible)
+echo ChatMonitor Windows Build (Offline)
 echo ========================================
 
-:: Check if compatible environment exists
-if not exist "..\.venv_compatible" (
-    echo ERROR: Compatible environment not found!
-    echo Please run create_env_compatible.bat first
+:: Check if offline environment exists
+if not exist "..\.venv_offline" (
+    echo ERROR: Offline environment not found!
+    echo Please run create_env_offline.bat first
     pause
     exit /b 1
 )
 
-:: Activate compatible environment
-echo Activating compatible environment...
-call ..\.venv_compatible\Scripts\activate.bat
+:: Activate offline environment
+echo Activating offline environment...
+call ..\.venv_offline\Scripts\activate.bat
 
 :: Verify Python version
 echo.
@@ -86,8 +86,6 @@ pyinstaller ^
     --collect-all yaml ^
     --collect-all psutil ^
     --collect-all tkinter ^
-    --exclude-module setuptools ^
-    --exclude-module pkg_resources ^
     ..\main_monitor_gui_app.py
 
 :: Check build result
