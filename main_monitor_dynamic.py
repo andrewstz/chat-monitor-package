@@ -56,14 +56,14 @@ def configure_tesseract():
                                       capture_output=True, text=True, timeout=5)
             
             if result.returncode == 0:
-                debug_log(f"[TESSERACT] ✅ 找到可用的tesseract: {path}")
+                debug_log(f"[TESSERACT] [OK] 找到可用的tesseract: {path}")
                 pytesseract.pytesseract.tesseract_cmd = path
                 return True
         except Exception as e:
             debug_log(f"[TESSERACT] 测试路径失败 {path}: {str(e)}")
             continue
     
-    debug_log("[TESSERACT] ❌ 未找到可用的tesseract")
+    debug_log("[TESSERACT] [ERROR] 未找到可用的tesseract")
     return False
 
 # 初始化时配置tesseract（移到函数定义之后）
@@ -84,7 +84,7 @@ try:
     YOLO_AVAILABLE = True
 except ImportError:
     YOLO_AVAILABLE = False
-    print("⚠️  ultralytics未安装，无法使用YOLO模型")
+    print("[WARNING] ultralytics未安装，无法使用YOLO模型")
 
 def debug_log(msg):
     try:
@@ -99,8 +99,8 @@ def clear_debug_log():
     try:
         with open("/tmp/chatmonitor_debug.log", "w", encoding="utf-8") as f:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"[{timestamp}] === 程序启动，日志已清空 ===\n")
-        print("✅ 调试日志已清空")
+            f.write(f"[{timestamp}] === GUI程序启动，日志已清空 ===\n")
+        print("[OK] 调试日志已清空")
     except Exception as e:
         print(f"清空调试日志失败: {e}")
 
@@ -129,12 +129,12 @@ def get_config_path():
     # 查找存在的配置文件
     for path in possible_paths:
         if os.path.exists(path):
-            print(f"✅ 找到配置文件: {path}")
+            print(f"[OK] 找到配置文件: {path}")
             return path
     
     # 如果都找不到，返回默认路径
     default_path = "config_with_yolo.yaml"
-    print(f"⚠️  未找到配置文件，使用默认路径: {default_path}")
+    print(f"[WARNING] 未找到配置文件，使用默认路径: {default_path}")
     return default_path
 
 # 初始化配置管理器
@@ -220,10 +220,10 @@ def play_sound(sound_type="default"):
             exists = os.path.exists(path)
             debug_log(f"[SOUND] 检查音频文件: {path} - {'存在' if exists else '不存在'}")
             if exists:
-                debug_log(f"[SOUND] ✅ 找到音频文件: {path}")
+                debug_log(f"[SOUND] [OK] 找到音频文件: {path}")
                 return path
         
-        debug_log(f"[SOUND] ❌ 未找到音频文件: {filename}")
+        debug_log(f"[SOUND] [ERROR] 未找到音频文件: {filename}")
         return None
     
     # 根据提示音类型选择音频文件 - 优先使用真实录音
@@ -262,10 +262,10 @@ def play_sound(sound_type="default"):
                     try:
                         subprocess.run(['powershell', '-c', f'(New-Object Media.SoundPlayer "{sound_file}").PlaySync()'], 
                                      capture_output=True, check=True)
-                        debug_log(f"[SOUND] ✅ Windows PowerShell播放成功: {sound_file}")
+                        debug_log(f"[SOUND] [OK] Windows PowerShell播放成功: {sound_file}")
                         return
                     except Exception as e:
-                        debug_log(f"[SOUND] ❌ Windows PowerShell播放失败: {e}")
+                        debug_log(f"[SOUND] [ERROR] Windows PowerShell播放失败: {e}")
                         return
                 elif system == "Darwin":  # macOS
                     # 只使用 afplay 播放指定音频文件
@@ -273,38 +273,38 @@ def play_sound(sound_type="default"):
                         debug_log(f"[SOUND] 尝试afplay播放: {sound_file}")
                         result = subprocess.run(['afplay', sound_file], capture_output=True, text=True, timeout=5)
                         if result.returncode == 0:
-                            debug_log(f"[SOUND] ✅ afplay播放成功: {sound_file}")
+                            debug_log(f"[SOUND] [OK] afplay播放成功: {sound_file}")
                             return
                         else:
-                            debug_log(f"[SOUND] ❌ afplay播放失败: {result.stderr}")
+                            debug_log(f"[SOUND] [ERROR] afplay播放失败: {result.stderr}")
                     except subprocess.TimeoutExpired:
-                        debug_log(f"[SOUND] ⚠️ afplay播放超时: {sound_file}")
+                        debug_log(f"[SOUND] [WARNING] afplay播放超时: {sound_file}")
                     except Exception as e:
-                        debug_log(f"[SOUND] ❌ afplay播放异常: {str(e)}")
+                        debug_log(f"[SOUND] [ERROR] afplay播放异常: {str(e)}")
                     
                     # 如果 afplay 失败，记录错误但不使用系统提示音
-                    debug_log(f"[SOUND] ❌ 无法播放指定音频文件: {sound_file}")
+                    debug_log(f"[SOUND] [ERROR] 无法播放指定音频文件: {sound_file}")
                     return
                     
                 elif system == "Linux":
                     try:
                         subprocess.run(['paplay', sound_file], capture_output=True, check=True)
-                        debug_log(f"[SOUND] ✅ Linux paplay播放成功: {sound_file}")
+                        debug_log(f"[SOUND] [OK] Linux paplay播放成功: {sound_file}")
                         return
                     except (subprocess.CalledProcessError, FileNotFoundError):
                         subprocess.run(['aplay', sound_file], capture_output=True, check=True)
-                        debug_log(f"[SOUND] ✅ Linux aplay播放成功: {sound_file}")
+                        debug_log(f"[SOUND] [OK] Linux aplay播放成功: {sound_file}")
                         return
             else:
-                debug_log(f"[SOUND] ❌ 未找到音频文件: {sound_file_name}")
+                debug_log(f"[SOUND] [ERROR] 未找到音频文件: {sound_file_name}")
                 return
         
         # 如果没有找到音频文件，记录错误但不播放系统提示音
-        debug_log(f"[SOUND] ❌ 未找到音频文件配置: {sound_type}")
+        debug_log(f"[SOUND] [ERROR] 未找到音频文件配置: {sound_type}")
                 
     except Exception as e:
         # 所有方法都失败时，记录错误但不播放系统提示音
-        debug_log(f"[SOUND] ❌ 音频播放失败: {e}")
+        debug_log(f"[SOUND] [ERROR] 音频播放失败: {e}")
         return
 
 def check_process(app_name):
@@ -479,81 +479,57 @@ class YOLOModelManager:
         self.initialized = self.model is not None
         
     def _resolve_model_path(self, model_path):
-        """解析模型路径，支持 .app 包和开发环境"""
+        """解析模型路径，支持打包后的应用程序"""
         import sys
         
-        debug_log(f"[YOLOModelManager._resolve_model_path] 启动, model_path={model_path}")
-        print(f"🔍 当前工作目录: {os.getcwd()}")
-        print(f"🔍 sys.frozen: {getattr(sys, 'frozen', False)}")
-        if getattr(sys, 'frozen', False):
-            print(f"🔍 sys.executable: {sys.executable}")
-            print(f"🔍 可执行文件目录: {os.path.dirname(sys.executable)}")
+        print(f"[DEBUG] 当前工作目录: {os.getcwd()}")
+        print(f"[DEBUG] sys.frozen: {getattr(sys, 'frozen', False)}")
+        print(f"[DEBUG] sys.executable: {sys.executable}")
+        print(f"[DEBUG] 可执行文件目录: {os.path.dirname(sys.executable)}")
         
-        # 调试断点 - 可以通过环境变量启用
-        # if os.environ.get('CHATMONITOR_DEBUG') == '1':
-        #     import pdb; pdb.set_trace()
-        
-        # 远程调试支持
-        if os.environ.get('CHATMONITOR_REMOTE_DEBUG') == '1':
-            try:
-                import debugpy
-                debugpy.listen(("0.0.0.0", 5678))
-                print("🔗 远程调试器已启动，等待连接...")
-                debugpy.wait_for_client()
-                print("🔗 远程调试器已连接")
-            except ImportError:
-                print("⚠️  debugpy未安装，跳过远程调试")
-            except Exception as e:
-                print(f"⚠️  远程调试启动失败: {e}")
-        
-        # 如果路径已经是绝对路径且存在，直接返回
+        # 如果模型路径是绝对路径且存在，直接返回
         if os.path.isabs(model_path) and os.path.exists(model_path):
-            print(f"✅ 绝对路径存在: {model_path}")
-            debug_log(f"[YOLOModelManager._resolve_model_path] ✅ 绝对路径存在: {model_path}")
             return model_path
-            
-        # 可能的模型路径
-        possible_paths = []
-        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试路径列表:")
-        # 1. PyInstaller专用临时目录
-        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-            meipass_path = os.path.join(sys._MEIPASS, model_path)
-            possible_paths.append(meipass_path)
-            debug_log(f"[YOLOModelManager._resolve_model_path] 尝试_MEIPASS路径: {meipass_path}")
-        # 2. macOS .app Resources
-        if getattr(sys, 'frozen', False):
-            app_dir = os.path.dirname(sys.executable)
-            resources_path = os.path.join(app_dir, "..", "Resources", model_path)
-            possible_paths.append(resources_path)
-            debug_log(f"[YOLOModelManager._resolve_model_path] 尝试Resources路径: {resources_path}")
-        # 3. 用户目录
-        user_home = os.path.expanduser("~")
-        user_models_path = os.path.join(user_home, "ChatMonitor", "models", os.path.basename(model_path))
-        possible_paths.append(user_models_path)
-        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试用户目录: {user_models_path}")
-        # 4. 当前工作目录
-        cwd_path = os.path.join(os.getcwd(), model_path)
-        possible_paths.append(cwd_path)
-        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试当前工作目录: {cwd_path}")
-        # 5. 脚本目录
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        script_models_path = os.path.join(script_dir, model_path)
-        possible_paths.append(script_models_path)
-        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试脚本目录: {script_models_path}")
-        # 6. 绝对路径
-        abs_path = os.path.abspath(model_path)
-        possible_paths.append(abs_path)
-        debug_log(f"[YOLOModelManager._resolve_model_path] 尝试绝对路径: {abs_path}")
         
-        # 检查所有路径
-        for i, path in enumerate(possible_paths):
-            exists = os.path.exists(path)
-            debug_log(f"[YOLOModelManager._resolve_model_path] 检查: {path} - {'存在' if exists else '不存在'}")
-            if exists:
-                debug_log(f"[YOLOModelManager._resolve_model_path] ✅ 找到模型文件: {path}")
+        # 尝试多个可能的路径
+        possible_paths = []
+        
+        # 1. 当前工作目录
+        possible_paths.append(os.path.join(os.getcwd(), model_path))
+        
+        # 2. 脚本所在目录
+        if getattr(sys, 'frozen', False):
+            # 打包后的应用程序
+            base_path = os.path.dirname(sys.executable)
+            possible_paths.append(os.path.join(base_path, model_path))
+            possible_paths.append(os.path.join(base_path, "models", os.path.basename(model_path)))
+        else:
+            # 开发环境
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            possible_paths.append(os.path.join(script_dir, model_path))
+            possible_paths.append(os.path.join(script_dir, "models", os.path.basename(model_path)))
+        
+        # 3. 用户主目录
+        home_dir = os.path.expanduser("~")
+        possible_paths.append(os.path.join(home_dir, model_path))
+        possible_paths.append(os.path.join(home_dir, "models", os.path.basename(model_path)))
+        
+        # 4. 系统级安装目录
+        if getattr(sys, 'frozen', False):
+            # 打包后的应用程序，尝试从可执行文件目录查找
+            exe_dir = os.path.dirname(sys.executable)
+            possible_paths.append(os.path.join(exe_dir, "models", os.path.basename(model_path)))
+            possible_paths.append(os.path.join(exe_dir, "..", "models", os.path.basename(model_path)))
+        
+        # 测试每个路径
+        for path in possible_paths:
+            if os.path.exists(path):
+                print(f"[OK] 找到模型文件: {path}")
                 return path
         
-        debug_log(f"[YOLOModelManager._resolve_model_path] ❌ 未找到模型文件: {model_path}")
+        # 如果都找不到，返回原始路径（让调用者处理错误）
+        print(f"[WARNING] 未找到模型文件: {model_path}")
+        print(f"[DEBUG] 尝试的路径: {possible_paths}")
         return model_path
     def detect_popups(self, image):
         if not self.initialized:
@@ -572,6 +548,16 @@ class YOLOModelManager:
 def main():
     # 清空调试日志
     clear_debug_log()
+    
+    # 初始化配置管理器
+    init_config_manager()
+    
+    # 获取配置
+    conf = get_config()
+    
+    # 检查调试模式
+    debug_verbose = conf.get("debug", {}).get("verbose", False)
+    print(f"[DEBUG] 调试模式: {'开启' if debug_verbose else '关闭'}")
     
     print("✅ 动态配置监控已启动，修改 config_with_yolo.yaml 可实时生效")
     print(f"🕐 启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -661,7 +647,7 @@ def main():
             if yolo_manager and yolo_manager.initialized:
                 results = detect_and_ocr_with_yolo(img, yolo_manager, ocr_lang, ocr_psm)
                 if debug_verbose and results:
-                    print(f"🔍 检测到 {len(results)} 个弹窗 - {datetime.now().strftime('%H:%M:%S')}")
+                    print(f"[DEBUG] 检测到 {len(results)} 个弹窗 - {datetime.now().strftime('%H:%M:%S')}")
             else:
                 if debug_verbose:
                     print(f"⚠️  YOLO检测未启用或初始化失败 - {datetime.now().strftime('%H:%M:%S')}")
@@ -669,7 +655,7 @@ def main():
                 text = result['text']
                 if debug_verbose:
                     # 添加详细的调试信息
-                    print(f"🔍 调试信息:")
+                    print(f"[DEBUG] 调试信息:")
                     print(f"  text类型: {type(text)}")
                     print(f"  text内容: '{text}'")
                     print(f"  text长度: {len(text) if text else 0}")

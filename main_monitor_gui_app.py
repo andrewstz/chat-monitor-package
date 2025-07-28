@@ -692,12 +692,12 @@ class ChatMonitorGUI:
                     if self.yolo_manager and self.yolo_manager.initialized:
                         results = detect_and_ocr_with_yolo(img, self.yolo_manager, ocr_lang, ocr_psm)
                         if results:
-                            self.safe_add_log_message(f"🔍 检测到 {len(results)} 个弹窗")
+                            self.safe_add_log_message(f"[DEBUG] 检测到 {len(results)} 个弹窗")
                             # 添加详细的检测信息
                             for i, result in enumerate(results):
-                                self.safe_add_log_message(f"🔍 弹窗 {i+1}: 置信度={result.get('confidence', 0):.2f}, 文本长度={len(result.get('text', ''))}")
+                                self.safe_add_log_message(f"[DEBUG] 弹窗 {i+1}: 置信度={result.get('confidence', 0):.2f}, 文本长度={len(result.get('text', ''))}")
                         elif self.detection_count % 10 == 0:
-                            self.safe_add_log_message(f"🔍 第 {self.detection_count} 次检测：未发现弹窗")
+                                                          self.safe_add_log_message(f"[DEBUG] 第 {self.detection_count} 次检测：未发现弹窗")
                     else:
                         if self.detection_count % 10 == 0:
                             self.safe_add_log_message(f"⚠️ YOLO模型未初始化，跳过弹窗检测")
@@ -712,14 +712,14 @@ class ChatMonitorGUI:
                         text = result['text']
                         from main_monitor_dynamic import FUZZY_MATCHER as current_fuzzy_matcher
                         if text and current_fuzzy_matcher:
-                            self.safe_add_log_message(f"🔍 检测到弹窗文本: {text[:100]}...")
+                            self.safe_add_log_message(f"[DEBUG] 检测到弹窗文本: {text[:100]}...")
                             first_line = text.splitlines()[0] if text else ""
                             # self.safe_add_log_message(f"🔍 第一行文本: '{first_line}'")
                             
                             # 添加详细的匹配调试信息
                             # self.safe_add_log_message(f"🔍 开始模糊匹配: '{first_line}'")
                             if current_fuzzy_matcher:
-                                self.safe_add_log_message(f"🔍 模糊匹配器已初始化")
+                                self.safe_add_log_message(f"[DEBUG] 模糊匹配器已初始化")
                                 # 获取当前联系人列表
                                 config_manager = get_config_manager()
                                 conf = config_manager.load_config()

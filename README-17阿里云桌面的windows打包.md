@@ -232,3 +232,21 @@ build_simple_english.bat -》 build_aliyun_simple.bat
 ✅ 直接进行构建，避免测试步骤
 ✅ 包含所有必要的资源文件
 
+
+
+# 我看到问题了！这是一个典型的PyInstaller打包后的编码问题。错误信息显示：
+YOLO模型初始化异常: 'gbk' codec can't encode character '\U0001f50d' in position 0: illegal multibyte sequence
+这是因为在Windows环境下，打包后的程序默认使用GBK编码，但代码中包含了Unicode字符
+找到问题了！代码中有很多emoji字符（��），在Windows环境下打包后会出现编码问题。让我修复这个问题：
+现在让我创建一个修复编码问题的构建脚本：
+build_fixed_encoding.bat
+�� 问题原因
+emoji字符: 代码中使用了 🔍 等Unicode字符
+Windows编码: 打包后的程序默认使用GBK编码
+编码冲突: Unicode字符无法在GBK编码下正确显示
+✅ 修复内容
+1. 替换所有emoji字符
+�� → [DEBUG]
+✅ → [OK]
+❌ → [ERROR]
+⚠️ → [WARNING]
