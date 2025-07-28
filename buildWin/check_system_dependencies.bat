@@ -1,16 +1,24 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo Checking Python Dependencies
+echo System Python Dependency Check
 echo ========================================
 
 :: 检查Python版本
+echo Checking Python version...
 python --version
+if errorlevel 1 (
+    echo ERROR: Python not found in PATH
+    pause
+    exit /b 1
+)
+
 echo.
+echo ========================================
+echo Checking Python Dependencies
+echo ========================================
 
 :: 检查各个依赖包
-echo Checking dependencies...
-
 echo Checking opencv-python...
 python -c "import cv2; print('OpenCV version:', cv2.__version__)" 2>nul
 if errorlevel 1 (
@@ -85,5 +93,8 @@ echo   .\build_quick.bat
 echo.
 echo If some dependencies are ❌ missing, you can install them manually:
 echo   pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ [package_name]
+echo.
+echo Or use the offline installer:
+echo   .\install_dependencies_offline.bat
 echo.
 pause 

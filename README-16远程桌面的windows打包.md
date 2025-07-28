@@ -439,3 +439,61 @@ uv venv --python 3.10.18
 uv完全可以使用您本地已安装的Python 3.10.11。让我为您创建一个脚本来使用现有的Python版本。
 setup_uv_with_local_python.bat
 
+# 我不想用任何虚拟环境了，windows里已经装了python3.10.11，如何打包
+既然您已经安装了Python 3.10.11，我们可以直接使用系统Python进行打包，不需要虚拟环境。让我为您创建一个直接使用系统Python的打包脚本。
+build_with_system_python.bat
+现在让我也创建一个更简单的快速打包脚本：
+build_simple.bat
+让我也创建一个使用说明文档： README-系统Python打包.md
+
+
+# conda依赖检查脚本：
+check_system_dependencies.bat
+这个脚本会：
+✅ 只检查系统Python
+✅ 不检查UV环境
+✅ 显示所有依赖的状态
+很好！从检查结果可以看到：
+�� 依赖状态分析
+✅ 已安装的依赖
+requests (版本 2.28.1)
+❌ 缺失的依赖
+opencv-python
+ultralytics
+Pillow
+PyYAML
+psutil
+pygame
+pyinstaller
+🚀 下一步操作
+方案一：使用离线安装脚本（推荐）
+install_dependencies_offline.bat
+
+
+[‼️重要‼️]## 内网很多外网访问不到，这些库有没有离线安装的方法（比较简便的，比如在可访问外网的机器上批量下载，然后传入内网云桌面中，然后再在云桌面离线安装？）
+是的！这是一个很好的解决方案。让我为您创建一个完整的离线安装方案：
+�� 离线安装方案
+第一步：在外网机器上下载所有依赖包
+download_packages.bat
+download_packages_mac.sh
+这个脚本会：
+✅ 下载所有必需的Python包
+✅ 包含所有依赖的依赖包
+✅ 创建 packages 目录
+✅ 生成 .whl 文件
+第二步：在内网机器上安装离线包
+将整个 packages 文件夹传输到内网机器
+install_offline_packages.bat
+install_offline_packages_mac.sh
+第三步：创建使用说明
+README-离线安装指南.md
+README-macOS离线安装.md
+在内网机器上运行
+.\install_offline_packages.xxx
+✅ 第四步：验证和打包
+验证安装
+.\check_system_dependencies.bat
+开始打包
+.\build_quick.bat
+build_quick_mac.sh
+
