@@ -29,7 +29,7 @@ monitor:
 yolo:
   enabled: true
   model_path: "models/best.pt"  # 使用训练好的模型
-  confidence: 0.8 # 检测置信度阈值（降低以提高检测率）
+  confidence: 0.6 # 检测置信度阈值（降低以提高检测率）
   use_fallback: true  # 如果YOLO失败，使用全屏OCR备用方案
 
 ocr:

@@ -225,4 +225,10 @@ install_tesseract_windows.bat [me用]
 ## 如何验证Tesseract安装设置正确
 check_tesseract.bat
 
+build_simple_english.bat -》 build_aliyun_simple.bat
+这个脚本：
+✅ 完全英文，无编码问题
+✅ 移除了不支持的 --test 参数
+✅ 直接进行构建，避免测试步骤
+✅ 包含所有必要的资源文件
 

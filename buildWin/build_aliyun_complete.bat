@@ -5,12 +5,12 @@ echo ========================================
 echo Complete Build for Aliyun Windows
 echo ========================================
 
-:: 检查环境
+:: Check environment
 echo Checking environment...
 python --version
 pip list | findstr pyinstaller
 
-:: 检查文件
+:: Check files
 echo.
 echo Checking required files...
 if not exist "..\main_monitor_gui_app.py" (
@@ -28,14 +28,14 @@ if not exist "..\config_with_yolo.yaml" (
     echo WARNING: config_with_yolo.yaml not found!
 )
 
-:: 清理
+:: Clean
 echo.
 echo Cleaning previous builds...
 if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
 if exist *.spec del *.spec
 
-:: 测试依赖
+:: Test dependencies
 echo.
 echo Testing dependencies...
 python -c "import cv2; print('✓ OpenCV OK')" 2>nul || echo "✗ OpenCV missing"
@@ -43,7 +43,7 @@ python -c "import ultralytics; print('✓ Ultralytics OK')" 2>nul || echo "✗ U
 python -c "import psutil; print('✓ psutil OK')" 2>nul || echo "✗ psutil missing"
 python -c "import pygame; print('✓ pygame OK')" 2>nul || echo "✗ pygame missing"
 
-:: 开始构建
+:: Start build process
 echo.
 echo ========================================
 echo Starting build process...
@@ -97,7 +97,7 @@ pyinstaller ^
     --exclude-module pkg_resources ^
     "..\main_monitor_gui_app.py"
 
-:: 检查结果
+:: Check result
 if exist "dist\ChatMonitor.exe" (
     echo.
     echo ========================================
