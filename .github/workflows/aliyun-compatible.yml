@@ -1,0 +1,61 @@
+name: Aliyun Compatible Build
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies (Aliyun compatible)
+      run: |
+        python -m pip install --upgrade pip
+        # Core dependencies (like install_conda_fixed.bat)
+        pip install opencv-python>=4.8.0
+        pip install numpy>=1.24.0
+        pip install psutil>=5.9.0
+        pip install pyautogui>=0.9.54
+        pip install requests>=2.31.0
+        pip install PyYAML>=6.0
+        pip install Pillow>=10.0.0
+        pip install pytesseract>=0.3.10
+        pip install watchdog>=3.0.0
+        # Install ultralytics (like install_missing_deps.bat)
+        pip install ultralytics>=8.0.0
+        # Install pyinstaller
+        pip install pyinstaller
+    
+    - name: Build executable (Aliyun style)
+      run: |
+        # Simple build like build_aliyun_simple.bat
+        pyinstaller --onefile --windowed --name ChatMonitor --add-data "sounds;sounds" --add-data "models;models" --add-data "config_with_yolo.yaml;." "main_monitor_gui_app.py"
+    
+    - name: Create portable package
+      run: |
+        mkdir -p dist/ChatMonitor_Portable
+        copy dist\ChatMonitor.exe dist\ChatMonitor_Portable\
+        if exist "sounds" xcopy "sounds" "dist\ChatMonitor_Portable\sounds\" /E /I /Y
+        if exist "models" xcopy "models" "dist\ChatMonitor_Portable\models\" /E /I /Y
+        if exist "config_with_yolo.yaml" copy "config_with_yolo.yaml" "dist\ChatMonitor_Portable\"
+        copy "start_monitor.bat" "dist\ChatMonitor_Portable\"
+        copy "README.md" "dist\ChatMonitor_Portable\"
+        powershell Compress-Archive -Path dist\ChatMonitor_Portable\* -DestinationPath ChatMonitor_Windows_Portable.zip
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chat-monitor-aliyun-compatible-${{ matrix.python-version }}
+        path: ChatMonitor_Windows_Portable.zip 
