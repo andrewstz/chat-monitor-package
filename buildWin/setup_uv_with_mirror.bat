@@ -1,80 +1,68 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo UV Environment Setup with Chinese Mirror
+echo Setting up UV environment with mirror
 echo ========================================
 
-:: Set Chinese mirror sources
-echo Setting up Chinese mirror sources...
-set UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/
-set UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
-
-echo Using mirror: %UV_INDEX_URL%
-echo Extra mirror: %UV_EXTRA_INDEX_URL%
-
-:: Check if UV is installed
-echo Checking UV installation...
-uv --version >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: UV not found. Please install UV first.
-    echo Download from: https://github.com/astral-sh/uv
-    pause
-    exit /b 1
-)
-
-echo UV Version:
-uv --version
-
-:: Create UV environment with Python 3.9 and Chinese mirror
-echo Creating UV environment with Python 3.9...
-cd ..
-uv venv --python 3.9 --index-url %UV_INDEX_URL%
-cd buildWin
-
-:: Check if environment was created
+:: 检查是否已存在UV环境
 if exist "..\.venv\Scripts\activate.bat" (
-    echo SUCCESS: UV environment created successfully!
-    echo Location: ..\.venv
+    echo Found existing UV environment at ..\.venv
+    goto :activate_env
+)
+
+:: 创建新的UV环境，使用国内镜像源
+echo Creating new UV environment with Python 3.10.18...
+uv venv --python 3.10.18 --index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+
+if errorlevel 1 (
+    echo Failed to create UV environment with mirror, trying alternative mirror...
+    uv venv --python 3.10.18 --index-url https://mirrors.aliyun.com/pypi/simple/
+)
+
+if errorlevel 1 (
+    echo Failed to create UV environment with Aliyun mirror, trying Douban mirror...
+    uv venv --python 3.10.18 --index-url https://pypi.douban.com/simple/
+)
+
+:activate_env
+:: 激活环境
+if exist "..\.venv\Scripts\activate.bat" (
+    echo Activating UV environment...
+    call "..\.venv\Scripts\activate.bat"
 ) else (
-    echo ERROR: Failed to create UV environment
+    echo ERROR: UV environment not found!
+    echo Expected location: ..\.venv
+    echo Current directory: %CD%
+    echo Parent directory contents:
+    dir ".." | findstr "venv"
     pause
     exit /b 1
 )
 
-:: Activate environment
-echo Activating UV environment...
-call "..\.venv\Scripts\activate.bat"
+:: 验证Python版本
+echo Verifying Python version...
+python --version
 
-:: Install dependencies with Chinese mirror
-echo Installing dependencies with Chinese mirror...
-uv pip install --index-url %UV_INDEX_URL% opencv-python>=4.8.0
-uv pip install --index-url %UV_INDEX_URL% numpy>=1.24.0
-uv pip install --index-url %UV_INDEX_URL% psutil>=5.9.0
-uv pip install --index-url %UV_INDEX_URL% pyautogui>=0.9.54
-uv pip install --index-url %UV_INDEX_URL% requests>=2.31.0
-uv pip install --index-url %UV_INDEX_URL% PyYAML>=6.0
-uv pip install --index-url %UV_INDEX_URL% Pillow>=10.0.0
-uv pip install --index-url %UV_INDEX_URL% pytesseract>=0.3.10
-uv pip install --index-url %UV_INDEX_URL% watchdog>=3.0.0
+:: 安装核心依赖（使用镜像源）
+echo Installing core dependencies with mirror...
+uv pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ opencv-python ultralytics Pillow requests PyYAML psutil
 
-:: Verify installation
-echo Verifying installation...
-python -c "import cv2, numpy, psutil, pyautogui, requests, yaml, PIL, pytesseract, watchdog; print('SUCCESS: All dependencies installed successfully')"
+:: 安装音频相关依赖（使用镜像源）
+echo Installing audio dependencies with mirror...
+uv pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pygame
 
-if %ERRORLEVEL% EQU 0 (
-    echo ========================================
-    echo SUCCESS: UV environment setup completed!
-    echo ========================================
-    echo Environment: ..\.venv
-    echo Python: 3.9
-    echo Mirror: %UV_INDEX_URL%
-    echo.
-    echo Now you can run the build script
-    echo Run: build_windows_uv_simple_english.bat
-) else (
-    echo ========================================
-    echo ERROR: Dependency installation failed
-    echo ========================================
-)
+:: 安装构建工具（使用镜像源）
+echo Installing build tools with mirror...
+uv pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pyinstaller
 
+echo ========================================
+echo UV environment setup completed!
+echo ========================================
+echo.
+echo To activate the environment manually:
+echo   call ..\.venv\Scripts\activate.bat
+echo.
+echo To verify installation:
+echo   python -c "import cv2, ultralytics, pygame; print('All dependencies installed successfully!')"
+echo.
 pause 

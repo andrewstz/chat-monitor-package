@@ -430,3 +430,12 @@ Miniconda版本：22.11.1
 `避免Python 3.12+的兼容性问题`
 安装时勾选"Add to PATH"
 
+
+
+# uv重新创建虚拟环境，指定版本python3.10.18
+uv venv --python 3.10.18
+
+# 算了我本地已经装了3.10.11的，uv能使用它吗？
+uv完全可以使用您本地已安装的Python 3.10.11。让我为您创建一个脚本来使用现有的Python版本。
+setup_uv_with_local_python.bat
+
