@@ -16,6 +16,14 @@ chat_app:
 monitor:
   check_interval: 1
   reply_wait: 3
+  # 应用监控开关
+  process_monitor_on: true
+  # 网络监控开关
+  network_monitor_on: true
+  # 声音提醒开关
+  sound_alert_on: true
+  # 自动回复开关
+  auto_reply_on: false
 
 # YOLO模型配置
 yolo:

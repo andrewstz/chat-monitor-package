@@ -240,6 +240,43 @@ class ConfigManager:
             print(f"❌ 更新网络监控配置失败: {e}")
             return False
 
+    def get_monitor_states(self) -> Dict[str, bool]:
+        """获取监控开关状态"""
+        monitor_conf = self.get_config("monitor", {})
+        return {
+            "process_monitor_on": monitor_conf.get("process_monitor_on", True),
+            "network_monitor_on": monitor_conf.get("network_monitor_on", True)
+        }
+
+    def set_monitor_states(self, states: Dict[str, bool]) -> bool:
+        """设置监控开关状态"""
+        try:
+            # 读取当前配置
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            
+            # 确保 monitor 部分存在
+            if "monitor" not in config:
+                config["monitor"] = {}
+            
+            # 更新监控开关状态
+            for key, value in states.items():
+                config["monitor"][key] = value
+            
+            # 保存配置
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                yaml.dump(config, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+            
+            # 重新加载配置
+            self.load_config()
+            
+            print(f"✅ 监控开关状态已更新: {states}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ 更新监控开关状态失败: {e}")
+            return False
+
 if WATCHDOG_AVAILABLE:
     class ConfigFileHandler(FileSystemEventHandler):
         """配置文件变更处理器"""

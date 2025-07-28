@@ -253,6 +253,9 @@ class ChatMonitorGUI:
         self.app_monitor_enabled = True
         self.network_monitor_enabled = True
         
+        # 加载GUI状态
+        self.load_gui_state()
+        
         # 网络监控器
         self.network_monitor = None
         
@@ -934,6 +937,9 @@ class ChatMonitorGUI:
         
         # 更新状态标签
         self.update_status_label()
+        
+        # 保存GUI状态
+        self.save_gui_state()
     
     def on_network_monitor_toggle(self):
         """网络监控开关状态改变时触发"""
@@ -943,6 +949,9 @@ class ChatMonitorGUI:
         
         # 更新状态标签
         self.update_status_label()
+        
+        # 保存GUI状态
+        self.save_gui_state()
     
     def on_contacts_saved(self):
         """联系人设置保存后的回调"""
@@ -1018,6 +1027,66 @@ class ChatMonitorGUI:
             except subprocess.TimeoutExpired:
                 self.daemon_process.kill()
             self.safe_add_log_message("🛑 守护进程已停止")
+    
+    def save_gui_state(self):
+        """保存GUI状态到配置文件"""
+        try:
+            import yaml
+            import os
+            from config_manager import get_config_manager
+            
+            # 获取配置管理器
+            config_manager = get_config_manager()
+            conf = config_manager.load_config()
+            
+            # 添加GUI状态到现有配置
+            if "gui_state" not in conf:
+                conf["gui_state"] = {}
+            
+            conf["gui_state"]["app_monitor_enabled"] = self.app_monitor_enabled
+            conf["gui_state"]["network_monitor_enabled"] = self.network_monitor_enabled
+            conf["gui_state"]["window_geometry"] = self.root.geometry()
+            conf["gui_state"]["auto_scroll"] = True
+            conf["gui_state"]["max_log_lines"] = 1000
+            
+            # 保存到现有的config_with_yolo.yaml
+            config_manager.save_config(conf)
+                
+            debug_log(f"[GUI_STATE] 状态已保存: app_monitor={self.app_monitor_enabled}, network_monitor={self.network_monitor_enabled}")
+            
+        except Exception as e:
+            debug_log(f"[GUI_STATE] 保存状态失败: {str(e)}")
+    
+    def load_gui_state(self):
+        """从配置文件加载GUI状态"""
+        try:
+            from config_manager import get_config_manager
+            
+            # 获取配置管理器
+            config_manager = get_config_manager()
+            conf = config_manager.load_config()
+            
+            # 从现有配置中加载GUI状态
+            gui_state = conf.get("gui_state", {})
+            
+            # 加载监控开关状态
+            app_enabled = gui_state.get("app_monitor_enabled", False)
+            network_enabled = gui_state.get("network_monitor_enabled", False)
+            
+            # 更新UI状态
+            self.app_monitor_var.set(app_enabled)
+            self.network_monitor_var.set(network_enabled)
+            self.app_monitor_enabled = app_enabled
+            self.network_monitor_enabled = network_enabled
+            
+            debug_log(f"[GUI_STATE] 状态已加载: app_monitor={app_enabled}, network_monitor={network_enabled}")
+            
+            # 显示加载状态
+            if app_enabled or network_enabled:
+                self.safe_add_log_message(f"✅ 已恢复上次的监控设置 (应用监控: {'开启' if app_enabled else '关闭'}, 网络监控: {'开启' if network_enabled else '关闭'})")
+                        
+        except Exception as e:
+            debug_log(f"[GUI_STATE] 加载状态失败: {str(e)}")
     
     def close_program(self):
         """关闭程序"""
