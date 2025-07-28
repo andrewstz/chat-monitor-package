@@ -484,7 +484,7 @@ download_packages_mac.sh
 第二步：在内网机器上安装离线包
 将整个 packages 文件夹传输到内网机器
 install_offline_packages.bat
-install_offline_packages_mac.sh
+chmod +x install_offline_packages_mac.sh
 第三步：创建使用说明
 README-离线安装指南.md
 README-macOS离线安装.md
@@ -495,5 +495,10 @@ README-macOS离线安装.md
 .\check_system_dependencies.bat
 开始打包
 .\build_quick.bat
-build_quick_mac.sh
+chmod +x build_quick_mac.sh
+
+
+## SyntaxError: invalid syntax
+这个错误是因为您用 python 命令运行了 .sh 脚本。.sh 文件是 shell 脚本，需要用 bash 运行，不是用 python 运行。
+
 

@@ -84,5 +84,63 @@ quick_install.bat 这个脚本非常简单，没有复杂的编码设置。
    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ ultralytics
 
 
+# 阿里云windows10上怎么老卡在这里(quick_install.bat或者单独安装都这样卡住）
+我看到您在阿里云Windows 10上安装依赖时卡住了，特别是 mkl-2020.4、libopencv-4.12.0 和 qt6-main-6.9.1 这几个大包。这是阿里云网络环境的常见问题。让我为您创建几个解决方案：
+install_conda_offline.bat
+现在让我创建一个更轻量级的安装脚本，避免安装大型包：
+install_minimal.bat
+现在让我创建一个分步安装脚本：
+install_step_by_step.bat
+手动解决方案
+如果脚本还是有问题，可以手动执行：
+    # 1. 先安装最基础的包
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ psutil
 
-运行命令：
+    # 2. 安装轻量级OpenCV
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ opencv-python-headless
+
+    # 3. 安装其他包
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pillow requests pyyaml pygame
+
+    # 4. 安装ultralytics
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ ultralytics
+
+    # 5. 安装pyinstaller
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pyinstaller
+
+
+# 我看主要是qt6-main-6.9.1       | 90.1 MB这个下载慢，很久才进一点点
+您说得对，qt6-main-6.9.1 这个90MB的大包确实是主要问题。这个包是Qt6的GUI库，对于我们的项目来说不是必需的。让我为您创建一个完全避免Qt6的安装脚本：
+install_no_qt.bat 乱码报错（`'xxx' 不是命令，错误信息显示命令被错误地分割 `）-》 install_fixed_encoding.bat
+    最简单的解决方案，避免所有编码问题： simple_install.bat
+现在让我创建一个更激进的解决方案，完全避免所有大型包：
+install_ultra_minimal.bat
+`为什么Qt6不是必需的`
+我们的项目主要使用tkinter：GUI界面用的是Python内置的tkinter
+OpenCV不需要Qt6：opencv-python-headless 版本不需要GUI库
+pygame可以稍后安装：如果需要声音功能，可以单独安装
+手动安装命令
+如果脚本还有问题，可以手动执行：
+    # 1. 安装psutil（解决您当前的问题）
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ psutil
+
+    # 2. 安装轻量级OpenCV
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ opencv-python-headless
+
+    # 3. 安装其他基础包
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pillow requests pyyaml
+
+    # 4. 安装ultralytics
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ ultralytics
+
+    # 5. 安装pyinstaller
+    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ pyinstaller
+
+    # 6. 测试
+    python ..\main_monitor_gui_app.py
+
+
+
+
+
+
