@@ -482,5 +482,34 @@ get_monitor_states、set_monitor_states
 程序重启记忆 - 重启后自动恢复上次的状态
 类型安全 - 使用布尔值，避免字符串混淆
 
+## 我已经取消勾选应用、网络监控了，为啥再次运行python ../main_monitor_gui_app.py还是勾选状态，配置config_with_yolo.yaml里的字段值也没有更新process_monitor_on、network_monitor_on还是true
+现在我明白问题了！save_gui_state() 方法只保存了 gui_state 部分，但没有保存 monitor 部分的 process_monitor_on 和 network_monitor_on 字段。
+我需要修改 on_app_monitor_toggle() 和 on_network_monitor_toggle() 方法，让它们在切换开关时同时调用我们新添加的 set_monitor_states() 方法
+。。。同时保存到monitor配置中
+现在我还需要修改 load_gui_state() 方法，让它也从 monitor 部分加载状态：
+。。。从monitor部分加载监控开关状态（优先级更高）
+我看到问题了！从图片中可以看到，您只勾选了"应用监控"，取消了"网络监控"，但配置文件没有更新。
+问题在于我的代码逻辑有误。当您只修改一个开关时，get_monitor_states() 会返回当前的配置状态，然后我只更新了其中一个字段，但另一个字段可能被覆盖了。
+我发现问题了！在 load_gui_state() 方法中，默认值设置有问题。当配置文件中没有找到 process_monitor_on 或 network_monitor_on 时，默认值被设置为 True，这导致即使配置文件中是 false，也会被忽略。
+。。。
+✅ 问题修复了！
+问题原因：
+之前的问题：
+load_gui_state() 在复选框变量创建之前被调用
+即使 load_gui_state() 正确设置了状态，但后来创建的复选框变量又覆盖了这些设置
+导致界面显示与配置文件不一致
+现在的解决方案：
+先创建所有复选框变量（默认值为 True）
+然后调用 load_gui_state() 从配置文件加载状态
+load_gui_state() 会调用 self.app_monitor_var.set(app_enabled) 和 self.network_monitor_var.set(network_enabled) 来正确设置UI状态
+现在的工作流程：
+创建复选框变量（默认 True）
+调用 load_gui_state()
+从配置文件读取状态：
+process_monitor_on: false → app_enabled = False
+network_monitor_on: true → network_enabled = True
+设置UI状态：
+self.app_monitor_var.set(False) → 取消勾选
+self.network_monitor_var.set(True) → 保持勾选
 
 

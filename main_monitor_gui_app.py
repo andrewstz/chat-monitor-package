@@ -253,9 +253,6 @@ class ChatMonitorGUI:
         self.app_monitor_enabled = True
         self.network_monitor_enabled = True
         
-        # 加载GUI状态
-        self.load_gui_state()
-        
         # 网络监控器
         self.network_monitor = None
         
@@ -320,7 +317,8 @@ class ChatMonitorGUI:
         )
         self.network_monitor_check.pack(side=tk.LEFT, padx=(0, 20))
         
-
+        # 加载GUI状态（在复选框创建之后调用）
+        self.load_gui_state()
         
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.close_program)
@@ -940,6 +938,19 @@ class ChatMonitorGUI:
         
         # 保存GUI状态
         self.save_gui_state()
+        
+        # 同时保存到monitor配置中
+        try:
+            from config_manager import get_config_manager
+            config_manager = get_config_manager()
+            # 只更新应用监控状态，不影响网络监控状态
+            states = {
+                "process_monitor_on": self.app_monitor_enabled,
+                "network_monitor_on": self.network_monitor_enabled
+            }
+            config_manager.set_monitor_states(states)
+        except Exception as e:
+            debug_log(f"[SWITCH] 保存监控状态失败: {str(e)}")
     
     def on_network_monitor_toggle(self):
         """网络监控开关状态改变时触发"""
@@ -952,6 +963,19 @@ class ChatMonitorGUI:
         
         # 保存GUI状态
         self.save_gui_state()
+        
+        # 同时保存到monitor配置中
+        try:
+            from config_manager import get_config_manager
+            config_manager = get_config_manager()
+            # 只更新网络监控状态，不影响应用监控状态
+            states = {
+                "process_monitor_on": self.app_monitor_enabled,
+                "network_monitor_on": self.network_monitor_enabled
+            }
+            config_manager.set_monitor_states(states)
+        except Exception as e:
+            debug_log(f"[SWITCH] 保存监控状态失败: {str(e)}")
     
     def on_contacts_saved(self):
         """联系人设置保存后的回调"""
@@ -1069,9 +1093,27 @@ class ChatMonitorGUI:
             # 从现有配置中加载GUI状态
             gui_state = conf.get("gui_state", {})
             
-            # 加载监控开关状态
-            app_enabled = gui_state.get("app_monitor_enabled", False)
-            network_enabled = gui_state.get("network_monitor_enabled", False)
+            # 从monitor部分加载监控开关状态（优先级更高）
+            monitor_conf = conf.get("monitor", {})
+            
+            # 添加调试信息
+            debug_log(f"[GUI_STATE] monitor_conf: {monitor_conf}")
+            debug_log(f"[GUI_STATE] gui_state: {gui_state}")
+            
+            # 检查monitor部分是否存在这些字段，如果存在就使用，否则使用gui_state的默认值
+            if "process_monitor_on" in monitor_conf:
+                app_enabled = monitor_conf["process_monitor_on"]
+                debug_log(f"[GUI_STATE] 从monitor部分读取process_monitor_on: {app_enabled}")
+            else:
+                app_enabled = gui_state.get("app_monitor_enabled", True)
+                debug_log(f"[GUI_STATE] 从gui_state部分读取app_monitor_enabled: {app_enabled}")
+                
+            if "network_monitor_on" in monitor_conf:
+                network_enabled = monitor_conf["network_monitor_on"]
+                debug_log(f"[GUI_STATE] 从monitor部分读取network_monitor_on: {network_enabled}")
+            else:
+                network_enabled = gui_state.get("network_monitor_enabled", True)
+                debug_log(f"[GUI_STATE] 从gui_state部分读取network_monitor_enabled: {network_enabled}")
             
             # 更新UI状态
             self.app_monitor_var.set(app_enabled)
@@ -1079,7 +1121,7 @@ class ChatMonitorGUI:
             self.app_monitor_enabled = app_enabled
             self.network_monitor_enabled = network_enabled
             
-            debug_log(f"[GUI_STATE] 状态已加载: app_monitor={app_enabled}, network_monitor={network_enabled}")
+            debug_log(f"[GUI_STATE] 最终状态: app_monitor={app_enabled}, network_monitor={network_enabled}")
             
             # 显示加载状态
             if app_enabled or network_enabled:
