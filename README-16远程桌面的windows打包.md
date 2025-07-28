@@ -502,3 +502,42 @@ chmod +x build_quick_mac.sh
 这个错误是因为您用 python 命令运行了 .sh 脚本。.sh 文件是 shell 脚本，需要用 bash 运行，不是用 python 运行。
 
 
+## install_offline_packages.bat安装ing报错：这是让我单独再安装一次吗
+You can try installing individual packages:
+  pip install packages\opencv_python*.whl
+  pip install packages\ultralytics*.whl
+  pip install packages\pygame*.whl
+  pip install packages\pyinstaller*.whl
+是的，这个错误提示建议您单独安装这些包。从错误信息看，主要问题是 pyexpat 模块的 DLL 加载失败，这是一个比较基础的 Python 问题。
+ImportError: DLL load failed while importing pyexpat - 这是 Python 核心模块的问题
+解决方案
+方案一：重新安装 Python（推荐）
+卸载当前 Python
+conda remove python
+重新安装 Python 3.10.18
+conda install python=3.10.18
+方案二：单独安装关键包
+进入 packages 目录
+按顺序安装
+pip install setuptools*.whl
+pip install wheel*.whl
+pip install numpy*.whl
+pip install opencv_python*.whl
+pip install ultralytics*.whl
+pip install pygame*.whl
+pip install pyinstaller*.whl
+方案三：使用系统 Python
+python --version
+如果系统有 Python，使用系统 Python 而不是 conda
+然后安装依赖
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple/ opencv-python ultralytics pygame pyinstaller
+🎯 推荐步骤
+先检查 Python 安装：
+   python -c "import pyexpat; print('Python core modules OK')"
+如果 pyexpat 有问题，重新安装 Python：
+   conda install python=3.10.18 --force-reinstall
+
+
+
+
+

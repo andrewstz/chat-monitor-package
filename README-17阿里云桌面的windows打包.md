@@ -162,6 +162,67 @@ build_aliyun_complete.bat
     完整的打包参数
     更多的隐藏导入
 
+让我为您创建一个调试脚本来帮助排查问题：
+debug_detection.bat
+    这个脚本会：
+    检查模型文件是否存在
+    测试YOLO模型加载
+    测试截图功能
+    运行检测测试
+现在让我创建一个调整检测参数的脚本：
+adjust_detection.bat
+    这个脚本会：
+    创建调整后的配置文件
+    降低置信度阈值到0.3
+    启用调试模式
+弹框检测问题排查
+根据您的描述，程序运行正常但没有检测到模拟弹框。这可能有以下几个原因：
+1. 检测置信度阈值过高
+当前配置中 confidence: 0.8 可能太高，导致小弹框被忽略。
+2. YOLO模型文件问题
+模型文件可能不存在或路径不正确。
+3. 检测区域问题
+程序可能没有检测到正确的屏幕区域。
 
+
+
+# pip install watchdog
+问题2：调试日志路径错误
+错误：No such file or directory: '/tmp/chatmonitor_debug.log'
+原因：程序使用了Linux路径，在Windows上不存在
+解决方案： buildWin/fix_debug_log.bat
+mkdir C:\tmp
+问题3：latest.py文件缺失
+错误：can't open file 'latest.py': [Errno 2] No such file or directory
+解决方案：
+buildWin/fix_issues.bat
+    这个脚本会：
+    安装watchdog
+    创建调试日志目录
+    创建latest.py文件
+    测试修复结果
+
+
+
+# tesseract is not installed or it's not in your PATH
+这意味着：
+Tesseract OCR引擎没有安装
+或者安装了但没有添加到系统PATH
+install_tesseract.bat
+现在让我创建一个Windows专用的Tesseract安装脚本：
+install_tesseract_windows.bat [me用]
+方法2：手动安装Windows版本
+下载Tesseract：
+访问：https://github.com/UB-Mannheim/tesseract/wiki
+下载Windows版本（64位）
+安装：
+运行下载的安装程序
+安装到默认位置：C:\Program Files\Tesseract-OCR
+添加到PATH：
+打开系统环境变量设置
+在PATH中添加：C:\Program Files\Tesseract-OCR
+
+## 如何验证Tesseract安装设置正确
+check_tesseract.bat
 
 

@@ -99,6 +99,16 @@ class PopupSettingsWindow:
         )
         popup_fast_mode_check.grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
         
+        # YOLO置信度设置
+        ttk.Label(params_frame, text="YOLO检测置信度:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.yolo_confidence_var = tk.StringVar()
+        yolo_confidence_entry = ttk.Entry(params_frame, textvariable=self.yolo_confidence_var, width=15)
+        yolo_confidence_entry.grid(row=3, column=1, padx=(10, 0), pady=5, sticky="w")
+        
+        # 置信度说明
+        confidence_desc = ttk.Label(params_frame, text="(0.1-1.0，值越小检测越敏感，但误报越多)", font=("Arial", 8))
+        confidence_desc.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
+        
         # 状态标签
         self.popup_status_label = ttk.Label(main_frame, text="", font=("Arial", 10))
         self.popup_status_label.grid(row=3, column=0, pady=(0, 20), sticky="w")
@@ -146,16 +156,19 @@ class PopupSettingsWindow:
             conf = config_manager.load_config()
             monitor_conf = conf.get("monitor", {})
             popup_conf = conf.get("popup_settings", {})
+            yolo_conf = conf.get("yolo", {})
             
             # 设置默认值
             check_interval = monitor_conf.get("check_interval", 1)
             reply_wait = monitor_conf.get("reply_wait", 5)
             fast_mode = popup_conf.get("fast_mode", False)
+            yolo_confidence = yolo_conf.get("confidence", 0.3)
             
             # 更新UI
             self.popup_check_interval_var.set(str(check_interval))
             self.popup_reply_wait_var.set(str(reply_wait))
             self.popup_fast_mode_var.set(fast_mode)
+            self.yolo_confidence_var.set(str(yolo_confidence))
             
             # 更新状态
             self.update_popup_status_label("✅ 设置已加载")
@@ -170,6 +183,7 @@ class PopupSettingsWindow:
             check_interval = float(self.popup_check_interval_var.get())
             reply_wait = float(self.popup_reply_wait_var.get())
             fast_mode = self.popup_fast_mode_var.get()
+            yolo_confidence = float(self.yolo_confidence_var.get())
             
             # 验证输入
             if check_interval < 0.1 or check_interval > 10:
@@ -178,6 +192,10 @@ class PopupSettingsWindow:
             
             if reply_wait < 1 or reply_wait > 60:
                 self.update_popup_status_label("❌ 提醒等待时间必须在1-60秒之间")
+                return
+            
+            if yolo_confidence < 0.1 or yolo_confidence > 1.0:
+                self.update_popup_status_label("❌ YOLO置信度必须在0.1-1.0之间")
                 return
             
             # 保存到配置文件
@@ -195,6 +213,12 @@ class PopupSettingsWindow:
                 conf["popup_settings"] = {}
             
             conf["popup_settings"]["fast_mode"] = fast_mode
+            
+            # 保存YOLO置信度设置
+            if "yolo" not in conf:
+                conf["yolo"] = {}
+            
+            conf["yolo"]["confidence"] = yolo_confidence
             
             config_manager.save_config(conf)
             
@@ -220,6 +244,7 @@ class PopupSettingsWindow:
             self.popup_check_interval_var.set("1")
             self.popup_reply_wait_var.set("5")
             self.popup_fast_mode_var.set(False)
+            self.yolo_confidence_var.set("0.3")
             
             # 更新状态
             self.update_popup_status_label("✅ 已恢复默认设置")
